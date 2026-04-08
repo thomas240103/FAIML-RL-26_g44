@@ -13,7 +13,8 @@ Before starting to implement your own code, make sure to:
 ### 1. Local
 
 if you have a Linux system, you can work on the course project directly on your local machine. By doing so, you will also be able to render the Mujoco Hopper environment and visualize what is happening.
-We highly suggsest
+We highly suggest using Conda to manage the environment.
+
 **Dependencies**
 - Run `pip install -r requirements.txt`
 
