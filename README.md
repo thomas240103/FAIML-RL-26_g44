@@ -36,7 +36,7 @@ NOTE 2: you need to stay connected to the Google Colab interface at all times fo
 To train on the panda-gym task you have to follow these steps first:
 
 ```bash
-cd phase2/panda-gym
+cd part2/panda-gym
 pip install -e .
 ```
 
@@ -46,13 +46,13 @@ pip install -e .
 FAIML-RL-26/
 ├── README.md
 ├── requirements.txt
-├── phase1/ <-- about Hopper
+├── part1/ <-- about Hopper
 │   ├── agent.py
 │   ├── test_random_policy.py
 │   ├── train.py
 │   └── colab_template/
 │       └── test_random_policy.ipynb
-└── phase2/ <-- about PushTask
+└── part2/ <-- about PushTask
     ├── eval_sb3.py
     ├── rand_wrapper.py <-- randomization wrapper for UDR/ADR
     ├── test_random_policy.py
