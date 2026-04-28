@@ -27,14 +27,9 @@ def main():
 
         while not done:
 
-            if len(agent.states) == 0:
-                action = env.action_space.sample()
-                action_log_prob = 0.0
-
-            else:
-                action, action_log_prob = agent.get_action(current_state)
-
-            state, reward, terminated, truncated, _ = env.step(action)  # Step the simulator to the next timestep
+            action, action_log_prob = agent.get_action(current_state)
+            action_np = action.detach().cpu().numpy()
+            state, reward, terminated, truncated, _ = env.step(action_np)  # Step the simulator to the next timestep
 
             done = terminated or truncated
 

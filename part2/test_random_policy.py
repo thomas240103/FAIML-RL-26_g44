@@ -11,7 +11,7 @@
 import gymnasium as gym
 import panda_gym # type: ignore[import-not-found]
 def main():
-    render = False
+    render = True
 
     env = gym.make(
         "PandaPush-v3",
