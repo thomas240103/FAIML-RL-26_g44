@@ -85,7 +85,7 @@ class Agent(object):
         self.done = []
 
 
-    def update_policy(self):
+    def update_policy(self, baseline=0):
         action_log_probs = torch.stack(self.action_log_probs, dim=0).to(self.train_device).squeeze(-1)
         states = torch.stack(self.states, dim=0).to(self.train_device).squeeze(-1)
         next_states = torch.stack(self.next_states, dim=0).to(self.train_device).squeeze(-1)
@@ -94,7 +94,7 @@ class Agent(object):
 
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
         
-        discounted_rewards = discount_rewards(rewards, self.gamma)
+        discounted_rewards = discount_rewards(rewards, self.gamma) - baseline
 
         self.optimizer.zero_grad()
         loss = - (discounted_rewards * action_log_probs).sum()

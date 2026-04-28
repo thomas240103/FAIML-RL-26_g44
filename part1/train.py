@@ -20,7 +20,7 @@ def main():
     print('State space:', env.observation_space)  # state-space
     print('Action space:', env.action_space)  # action-space
 
-    n_episodes = 50
+    n_episodes = 2000
     for episode in range(n_episodes):
         done = False
         current_state, info = env.reset()  # Reset environment to initial state
@@ -38,8 +38,8 @@ def main():
 
             if render:
                 env.render()
-        
-        agent.update_policy()
+        print(episode, reward)
+        agent.update_policy(baseline=20)
     
     env.close()
 
