@@ -20,26 +20,26 @@ def main():
     print('State space:', env.observation_space)  # state-space
     print('Action space:', env.action_space)  # action-space
 
-    n_episodes = 2000
+    n_episodes = 10000
     for episode in range(n_episodes):
         done = False
         current_state, info = env.reset()  # Reset environment to initial state
 
         while not done:
 
-            action, action_log_prob = agent.get_action(current_state)
+            action, action_log_prob,vote = agent.get_action(current_state)
             action_np = action.detach().cpu().numpy()
             state, reward, terminated, truncated, _ = env.step(action_np)  # Step the simulator to the next timestep
 
             done = terminated or truncated
 
-            agent.store_outcome(state=current_state, next_state=state, reward=reward, action_log_prob=action_log_prob, done=done)
+            agent.store_outcome(state=current_state, next_state=state, reward=reward, action_log_prob=action_log_prob, done=done, state_value=vote)
             current_state = state
 
             if render:
                 env.render()
         print(episode, reward)
-        agent.update_policy(baseline=20)
+        agent.update_policy()
     
     env.close()
 
