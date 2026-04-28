@@ -93,8 +93,14 @@ class Agent(object):
         done = torch.Tensor(self.done).to(self.train_device)
 
         self.states, self.next_states, self.action_log_probs, self.rewards, self.done = [], [], [], [], []
+        
+        discounted_rewards = discount_rewards(rewards, self.gamma)
 
-        #
+        self.optimizer.zero_grad()
+        loss = - (discounted_rewards * action_log_probs).sum()
+        loss.backward()
+
+        self.optimizer.step()
         # TASK 2:
         #   - compute discounted returns
         #   - compute policy gradient loss function given actions and returns
