@@ -90,7 +90,7 @@ class Agent(object):
         self.state_values=[]
 
 
-    def update_policy(self, baseline=0,vote=0):
+    def update_policy(self, alg='reinforce', baseline=0.0):
         action_log_probs = torch.stack(self.action_log_probs, dim=0).to(self.train_device).squeeze(-1)
         states = torch.stack(self.states, dim=0).to(self.train_device).squeeze(-1)
         next_states = torch.stack(self.next_states, dim=0).to(self.train_device).squeeze(-1)
@@ -107,40 +107,42 @@ class Agent(object):
         #   - compute policy gradient loss function given actions and returns
         #   - compute gradients and step the optimizer
 
-        #discounted_rewards = discount_rewards(rewards, self.gamma) - baseline
-        #self.optimizer.zero_grad()
-        #loss = - (discounted_rewards * action_log_probs).sum()
-        #loss.backward()
-        #self.optimizer.step()
+        if alg == 'reinforce':
+            discounted_rewards = discount_rewards(rewards, self.gamma) - baseline
+            self.optimizer.zero_grad()
+            loss = - (discounted_rewards * action_log_probs).sum()
+            loss.backward()
+            self.optimizer.step()
         
         ######################################
 
 
-        #
         ############# TASK 3 ################:
         #   - compute boostrapped discounted return estimates
         #   - compute advantage terms
         #   - compute actor loss and critic loss
         #   - compute gradients and step the optimizer
-        #
-        _, next_values = self.policy(next_states)
+        
+        if alg == 'actor-critic':
+            _, next_values = self.policy(next_states)
 
-        next_values = next_values.squeeze(-1)
+            next_values = next_values.squeeze(-1)
 
-        next_values = next_values.detach()  #so when we do .backward gradients don't flow
+            next_values = next_values.detach()  #so when we do .backward gradients don't flow
 
-        bootstrapped_returns = rewards + self.gamma * next_values * (1 - done)
-        advantage = bootstrapped_returns - state_values
-        advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+            #bootstrapped_returns = rewards + self.gamma * next_values * (1 - done)
+            discounted_rewards = discount_rewards(rewards, self.gamma)
+            advantage = discounted_rewards - state_values
+            #advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
-        actor_loss = - (action_log_probs * advantage.detach()).mean()
-        critic_loss = F.mse_loss(state_values, bootstrapped_returns)
-        loss = actor_loss + critic_loss
+            actor_loss = - (action_log_probs * advantage.detach()).mean()
+            critic_loss = F.mse_loss(state_values, discounted_rewards)
+            loss = actor_loss + critic_loss
 
-        self.optimizer.zero_grad()
-        loss.backward()
+            self.optimizer.zero_grad()
+            loss.backward()
 
-        self.optimizer.step()
+            self.optimizer.step()
 
         return        
 
@@ -170,4 +172,3 @@ class Agent(object):
         self.rewards.append(torch.Tensor([reward]))
         self.done.append(done)
         self.state_values.append(state_value)
-

@@ -2,10 +2,75 @@
 
     Here you will implement the training loop for REINFORCE and Actor-Critic
 """
+import argparse
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from agent import Agent, Policy
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train REINFORCE or Actor-Critic on Hopper-v4")
+    parser.add_argument(
+        "--alg",
+        choices=["reinforce", "actor-critic"],
+        default="reinforce",
+        help="Training algorithm",
+    )
+    parser.add_argument(
+        "--baseline",
+        type=float,
+        default=0.0,
+        help="Constant baseline subtracted from REINFORCE discounted returns",
+    )
+    parser.add_argument(
+        "--episodes",
+        type=int,
+        default=3000,
+        help="Number of training episodes",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="Random seed",
+    )
+    parser.add_argument(
+        "--print-every",
+        type=int,
+        default=10,
+        help="Print training stats every N episodes",
+    )
+    parser.add_argument(
+        "--eval-every",
+        type=int,
+        default=100,
+        help="Evaluate every N episodes",
+    )
+    parser.add_argument(
+        "--eval-episodes",
+        type=int,
+        default=5,
+        help="Number of episodes per evaluation",
+    )
+    parser.add_argument(
+        "--render",
+        action="store_true",
+        help="Render training episodes in a human window",
+    )
+    parser.add_argument(
+        "--out",
+        type=str,
+        default=None,
+        help="Output name prefix for the learning curve",
+    )
+    parser.add_argument(
+        "--no-show",
+        action="store_true",
+        help="Save the plot without opening an interactive window",
+    )
+    return parser.parse_args()
 
 
 def evaluate_policy(agent, eval_env, n_eval_episodes=5):
@@ -20,6 +85,7 @@ def evaluate_policy(agent, eval_env, n_eval_episodes=5):
         while not done:
             action, _ = agent.get_action(state, evaluation=True)
             action_np = action.detach().cpu().numpy()
+            action_np = np.clip(action_np, eval_env.action_space.low, eval_env.action_space.high)
             next_state, reward, terminated, truncated, _ = eval_env.step(action_np)
             done = terminated or truncated
             episode_return += reward
@@ -31,7 +97,8 @@ def evaluate_policy(agent, eval_env, n_eval_episodes=5):
 
 
 def main():
-    render = False
+    args = parse_args()
+    render = args.render
 
     if render:
         env = gym.make('Hopper-v4', render_mode='human')
@@ -39,6 +106,10 @@ def main():
         env = gym.make('Hopper-v4', render_mode='rgb_array')
 
     eval_env = gym.make('Hopper-v4', render_mode='rgb_array')
+    env.action_space.seed(args.seed)
+    eval_env.action_space.seed(args.seed + 1)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
 
     policy=Policy(state_space=env.observation_space.shape[0], action_space=env.action_space.shape[0])
     agent = Agent(policy)
@@ -47,10 +118,15 @@ def main():
     print('State space:', env.observation_space)  # state-space
     print('Action space:', env.action_space)  # action-space
 
-    n_episodes = 3000
-    print_every = 10
-    eval_every = 100
-    n_eval_episodes = 5
+    n_episodes = args.episodes
+    print_every = args.print_every
+    eval_every = args.eval_every
+    n_eval_episodes = args.eval_episodes
+
+    print(f"Algorithm: {args.alg}")
+    if args.alg == "reinforce":
+        print(f"Baseline: {args.baseline}")
+    print(f"Seed: {args.seed}")
 
     train_returns = []
     eval_episodes = []
@@ -58,13 +134,14 @@ def main():
 
     for episode in range(n_episodes):
         done = False
-        current_state, info = env.reset()  # Reset environment to initial state
+        current_state, info = env.reset(seed=args.seed + episode)  # Reset environment to initial state
         episode_return = 0.0
 
         while not done:
 
-            action, action_log_prob,vote = agent.get_action(current_state)
+            action, action_log_prob, vote = agent.get_action(current_state)
             action_np = action.detach().cpu().numpy()
+            action_np = np.clip(action_np, env.action_space.low, env.action_space.high)
             state, reward, terminated, truncated, _ = env.step(action_np)  # Step the simulator to the next timestep
 
             done = terminated or truncated
@@ -87,7 +164,7 @@ def main():
             eval_returns.append(eval_mean_return)
             print(f"[EVAL] Episode {episode + 1} | Mean return over {n_eval_episodes} episodes: {eval_mean_return:.2f}")
 
-        agent.update_policy()
+        agent.update_policy(alg=args.alg, baseline=args.baseline)
 
     # Plot learning curve
     plt.figure(figsize=(10, 6))
@@ -108,12 +185,22 @@ def main():
 
     plt.xlabel('Episode')
     plt.ylabel('Cumulative reward')
-    plt.title('Learning curve')
+    title = f"Learning curve - {args.alg}"
+    if args.alg == "reinforce" and args.baseline != 0:
+        title += f" baseline={args.baseline:g}"
+    plt.title(title)
     plt.legend()
     plt.grid(alpha=0.3)
     plt.tight_layout()
-    plt.savefig('part1/learning_curve.png', dpi=150)
-    plt.show()
+
+    run_name = args.out
+    if run_name is None:
+        baseline_tag = f"_baseline_{args.baseline:g}" if args.alg == "reinforce" and args.baseline != 0 else ""
+        run_name = f"{args.alg}{baseline_tag}_seed_{args.seed}"
+    plt.savefig(f'part1/{run_name}_learning_curve.png', dpi=150)
+    if not args.no_show:
+        plt.show()
+    plt.close()
 
     env.close()
     eval_env.close()
