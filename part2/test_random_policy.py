@@ -16,14 +16,13 @@ def main():
     env = gym.make(
         "PandaPush-v3",
         render_mode="human" if render else "rgb_array",
-        type="target",
         reward_type="dense",
     )
     
     print('State space:', env.observation_space)  # state-space
     print('Action space:', env.action_space)  # action-space
 
-    n_episodes = 5
+    n_episodes = 100
 
     for ep in range(n_episodes):  
         done = False
