@@ -1,5 +1,17 @@
-gymnasium
-mujoco
-stable-baselines3[extra]>=2.0.0
-imageio
-opencv-python<4
+# Core numerical stack.
+numpy<2
+scipy>=1.10,<2
+
+# RL environments and training libraries.
+gymnasium>=0.29,<1.1
+mujoco>=3,<4
+stable-baselines3>=2.3,<3
+torch>=2.2,<3
+
+# Rendering and plotting utilities used across part1/part2.
+matplotlib>=3.8,<4
+imageio>=2.34,<3
+opencv-python>=4.8,<5
+
+# Local Panda Push environments (PyBullet-based).
+-e ./part2/panda-gym
