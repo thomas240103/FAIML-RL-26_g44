@@ -5,6 +5,8 @@ import gymnasium as gym
 import numpy as np
 import panda_gym  # type: ignore[import-not-found]
 from rand_wrapper import RandomizationWrapper
+from wrappers import RewardShapingWrapper
+from stable_baselines3.common.vec_env import VecNormalize
 
 from stable_baselines3 import PPO
 
@@ -53,30 +55,45 @@ def main() -> None:
     env = gym.make(
         "PandaPush-v3",
         render_mode="rgb_array",
+        max_episode_steps=500,
         type=args.env_type,
         reward_type="dense",
     )
+
 
     env = RandomizationWrapper(
         env,
         mass_range=(1.0, 5.0),
         mode=args.sampling_strategy,
     )
-    env.reset(seed=args.seed)
 
+    # Simple reward shaping: small time penalty and close-range bonus
+    env = RewardShapingWrapper(env, bonus_distance=0.05, bonus=1.0, time_penalty=1e-3)
+
+    # Normalize observations and rewards online
+    #env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.)
+
+    env.reset(seed=args.seed)
+    
+    # Rete con 4 hidden layers: 512 neuroni, poi 256, poi 128, poi 64
+    #policy_kwargs = dict(net_arch=[512, 256, 128, 64])
+    policy_kwargs = dict(net_arch=[256,256])
+    
+    
     model = PPO(
         "MultiInputPolicy",
         env,
-        learning_rate=1e-4,
-        n_steps=1024,
+        learning_rate=0.001, # provato anche 3e-4, 1e-
+        n_steps=1024, #provato anche 2048
         gamma=0.99,
         clip_range=0.2,
-        ent_coef=0.005,
+        ent_coef=0.005, # provato anche 0.01
         verbose=1,
         tensorboard_log="./ppo_logs/",
         seed=args.seed,
+        policy_kwargs=policy_kwargs
     )
-
+    
 
     model.learn(total_timesteps=args.timesteps, log_interval=1)
     if args.save:

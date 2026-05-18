@@ -5,7 +5,7 @@ import gymnasium as gym
 import numpy as np
 import panda_gym  # type: ignore[import-not-found]
 
-from stable_baselines3.common.vec_env import SubprocVecEnv
+from stable_baselines3.common.vec_env import SubprocVecEnv, VecNormalize
 
 from rand_wrapper import RandomizationWrapper
 from stable_baselines3 import SAC
