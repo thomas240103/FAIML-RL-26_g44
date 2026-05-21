@@ -25,30 +25,40 @@ Lo script usa `sys.executable` (il Python dell'env attivo) per lanciare i sottop
 
 ## Profili SAC
 
+I profili SAC sono pensati per `PandaPush-v3` come configurato nel progetto:
+reward dense, episodi da 500 step, osservazioni goal-conditioned e gap di massa
+source/target 1kg/5kg. La ricerca parte quindi da SAC+HER e poi testa quanto
+replay/update budget e domain randomization aiutano il transfer.
+
 | Profilo | Parametri esplorati | Run totali |
 |---|---|---|
-| 1 | `learning_rate` × `batch_size` — baseline senza HER e DR | 4 |
-| 2 | `learning_rate` × `gradient_steps` — impatto degli update per step | 6 |
-| 3 | `learning_rate` × `her` × `sampling_strategy` — impatto di HER e DR | 8 |
-| 4 | `batch_size` × `gradient_steps` × `her=True` × `sampling_strategy` — combo avanzata | 8 |
+| 1 | `learning_rate` × `gamma` × `batch_size` con `HER=True`, source fisso | 8 |
+| 2 | `gamma` × `batch_size` × `gradient_steps` con `HER=True`, source fisso | 12 |
+| 3 | `batch_size` × `gradient_steps` × `sampling_strategy` (`none`, `udr`, `adr`) con `HER=True` | 12 |
+| 4 | shortlist per run lunghe: `learning_rate` × `batch_size` × `sampling_strategy` con `HER=True` | 8 |
 
 ## Profili PPO
 
+PPO resta utile come baseline on-policy, ma in questo task i log esistenti
+mostrano success rate bassi rispetto a quanto ci si aspetta da SAC+HER su un
+task goal-conditioned. I profili PPO sono quindi piu' compatti e servono come
+confronto.
+
 | Profilo | Parametri esplorati | Run totali |
 |---|---|---|
-| 1 | `n_envs` — baseline senza DR | 2 |
-| 2 | `n_envs` × `sampling_strategy` — parallelismo + DR | 4 |
-| 3 | `n_envs` alti × `sampling_strategy` — scalabilità | 4 |
-| 4 | `n_envs` × `sampling_strategy` — full grid | 9 |
+| 1 | `learning_rate` × `gamma`, rollout fisso e source fisso | 4 |
+| 2 | `n_steps` × `clip_range` × `gae_lambda`, source fisso | 8 |
+| 3 | `ent_coef` × `sampling_strategy` (`none`, `udr`, `adr`) | 6 |
+| 4 | shortlist PPO: `learning_rate` × `sampling_strategy` | 4 |
 
 ## Struttura output
 
 ```
 test/
 └── profile_1/
-    ├── sac_learning_rate3e-04_batch_size256_her0_sampling_strategynone/
+    ├── SAC_1_lr1e-4_g0p98_bs256_gs1_ls1000_her1_drnone/
     │   └── training_log.txt
-    ├── sac_learning_rate3e-04_batch_size512_her0_sampling_strategynone/
+    ├── SAC_1_lr1e-4_g0p98_bs512_gs1_ls1000_her1_drnone/
     │   └── training_log.txt
     └── ...
 ```
@@ -64,8 +74,8 @@ Il flag `--smoke` riduce drasticamente i timesteps per verificare che ogni combi
 
 | Algoritmo | Timesteps smoke |
 |---|---|
-| SAC | 500 (supera `learning_starts=100`, fa qualche update) |
-| PPO | 3000 (circa 1 rollout con `n_steps=2048`) |
+| SAC | 2500 (supera `learning_starts=1000`, fa qualche update) |
+| PPO | 3000 richiesti; SB3 completa almeno un rollout, quindi con `n_envs=8` puo' raccogliere piu' step |
 
 ```bash
 # Verifica veloce che tutto funzioni
@@ -82,10 +92,10 @@ python run_tests.py --algorithm sac --profile 2 --smoke
 python run_tests.py --algorithm sac --profile 3 --smoke
 python run_tests.py --algorithm sac --profile 4 --smoke
 
-# Run completo profilo 3 SAC (HER + DR)
+# Run completo profilo 3 SAC (HER + DR/ADR)
 python run_tests.py --algorithm sac --profile 3
 
-# Run completo profilo 4 PPO (full grid)
+# Run completo profilo 4 PPO (shortlist)
 python run_tests.py --algorithm ppo --profile 4
 ```
 
@@ -97,9 +107,9 @@ Al termine, lo script stampa un riepilogo con esito di ogni run:
 ============================================================
 RIEPILOGO — 8 run
 ============================================================
-  ✓  sac_learning_rate3e-04_her0_sampling_strategynone
-  ✓  sac_learning_rate1e-03_her0_sampling_strategynone
-  ✗  sac_learning_rate3e-04_her1_sampling_strategyudr
+  ✓  SAC_1_lr1e-4_g0p98_bs256_gs1_ls1000_her1_drnone
+  ✓  SAC_1_lr1e-4_g0p98_bs512_gs1_ls1000_her1_drnone
+  ✗  SAC_1_lr3e-4_g0p99_bs512_gs1_ls1000_her1_drnone
   ...
 
 6/8 completate con successo.
@@ -111,4 +121,4 @@ Le run fallite hanno il log completo in `training_log.txt` per diagnosticare l'e
 
 - Le run vengono eseguite sequenzialmente, non in parallelo — per parallelizzarle manualmente si può lanciare `run_tests.py` con profili diversi su terminali diversi
 - Lo script chiama `train_sb3.py` (script unificato) — assicurarsi che sia presente nella stessa directory
-- I log tensorboard vengono salvati nelle rispettive cartelle (`./ppo_logs/`, `./sac_logs/`) indipendentemente dal profilo
+- I log TensorBoard dello script unificato vengono salvati in `./tb_logs/`

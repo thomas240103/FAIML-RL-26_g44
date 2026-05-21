@@ -10,58 +10,93 @@ from pathlib import Path
 #
 # Ogni profilo definisce un sottoinsieme di parametri da esplorare.
 # Lo script genera tutte le combinazioni (prodotto cartesiano) e le esegue.
+#
+# PandaPush-v3 in questo progetto usa reward dense, orizzonte 500 step,
+# controllo end-effector 3D e massa oggetto source/target 1kg/5kg. Per questo
+# i profili SAC privilegiano HER, replay/update budget e domain randomization:
+# sono i fattori piu' coerenti con un task goal-conditioned con sim-to-real gap
+# sulla massa dell'oggetto.
 
 SAC_PROFILES: dict[int, dict] = {
-    1: {  # Baseline: learning rate vs batch size, no HER, no DR
-        "learning_rate": [3e-4, 1e-3],
-        "batch_size":    [256, 512],
-        "her":           [False],
-        "sampling_strategy": ["none"],
-    },
-    2: {  # Gradient steps: quanti update per step raccolto
-        "learning_rate":   [3e-4, 1e-3],
-        "gradient_steps":  [1, 4, 8],
-        "her":             [False],
-        "sampling_strategy": ["none"],
-    },
-    3: {  # Impatto di HER con e senza domain randomization
-        "learning_rate":   [3e-4, 1e-3],
-        "her":             [False],
-        "sampling_strategy": ["none", "udr"],
-    },
-    4: {  # Combo: batch size + gradient steps + HER + DR
-        "learning_rate":   [3e-4],
+    1: {  # SAC+HER baseline: learning rate e batch size su source mass fissa
+        "learning_rate":   [1e-4, 3e-4],
+        "gamma":           [0.98, 0.99],
         "batch_size":      [256, 512],
-        "gradient_steps":  [1, 4],
-        "her":             [False],
+        "gradient_steps":  [1],
+        "learning_starts": [1000],
+        "her":             [True],
+        "sampling_strategy": ["none"],
+    },
+    2: {  # Sample efficiency: quanti update fare per step raccolto
+        "learning_rate":   [3e-4],
+        "gamma":           [0.98, 0.99],
+        "batch_size":      [256, 512],
+        "gradient_steps":  [1, 2, 4],
+        "learning_starts": [1000],
+        "her":             [True],
+        "sampling_strategy": ["none"],
+    },
+    3: {  # Robustezza alla massa: source fissa vs UDR/ADR nel range 1-5kg
+        "learning_rate":   [3e-4],
+        "gamma":           [0.98],
+        "batch_size":      [256, 512],
+        "gradient_steps":  [1, 2],
+        "learning_starts": [1000],
+        "her":             [True],
+        "sampling_strategy": ["none", "udr", "adr"],
+    },
+    4: {  # Shortlist per run lunghe: stabile, sample-efficient, con/ senza UDR
+        "learning_rate":   [1e-4, 3e-4],
+        "gamma":           [0.98],
+        "batch_size":      [256, 512],
+        "gradient_steps":  [2],
+        "learning_starts": [1000],
+        "tau":             [0.005],
+        "train_freq":      [1],
+        "her":             [True],
         "sampling_strategy": ["none", "udr"],
     },
 }
 
 PPO_PROFILES: dict[int, dict] = {
-    1: {  # Learning rate vs ent_coef — i due iperparametri più impattanti
-        "learning_rate":   [3e-4, 1e-3],
-        "ent_coef":        [0.001, 0.005],
-        "n_envs":          [4],
-        "sampling_strategy": ["none"],
-    },
-    2: {  # n_steps vs clip_range — dimensione rollout e aggressività update
-        "n_steps":         [1024, 2048],
-        "clip_range":      [0.1, 0.2],
-        "n_envs":          [4],
-        "sampling_strategy": ["none"],
-    },
-    3: {  # Iperparametri + domain randomization
-        "learning_rate":   [3e-4, 1e-3],
-        "ent_coef":        [0.001, 0.005],
-        "n_envs":          [4],
-        "sampling_strategy": ["none", "udr"],
-    },
-    4: {  # Full combo: lr + n_steps + DR
-        "learning_rate":   [3e-4, 1e-3],
-        "n_steps":         [1024, 2048],
+    1: {  # PPO baseline: update piu' frequenti su reward dense source
+        "learning_rate":   [1e-4, 3e-4],
+        "gamma":           [0.98, 0.99],
         "ent_coef":        [0.001],
-        "n_envs":          [4],
+        "n_steps":         [1024],
+        "clip_range":      [0.2],
+        "gae_lambda":      [0.95],
+        "n_envs":          [8],
+        "sampling_strategy": ["none"],
+    },
+    2: {  # Rollout/update geometry: batch totale = n_envs * n_steps
+        "learning_rate":   [3e-4],
+        "gamma":           [0.98],
+        "n_steps":         [512, 1024],
+        "clip_range":      [0.1, 0.2],
+        "gae_lambda":      [0.9, 0.95],
+        "ent_coef":        [0.001],
+        "n_envs":          [8],
+        "sampling_strategy": ["none"],
+    },
+    3: {  # Domain randomization per transfer source->target
+        "learning_rate":   [3e-4],
+        "gamma":           [0.98],
+        "n_steps":         [1024],
+        "clip_range":      [0.2],
+        "gae_lambda":      [0.95],
+        "ent_coef":        [0.001, 0.005],
+        "n_envs":          [8],
+        "sampling_strategy": ["none", "udr", "adr"],
+    },
+    4: {  # Shortlist PPO per confronto con SAC+HER
+        "learning_rate":   [1e-4, 3e-4],
+        "gamma":           [0.98],
+        "n_steps":         [1024],
+        "clip_range":      [0.2],
+        "gae_lambda":      [0.95],
+        "ent_coef":        [0.001],
+        "n_envs":          [8],
         "sampling_strategy": ["none", "udr"],
     },
 }
@@ -69,12 +104,17 @@ PPO_PROFILES: dict[int, dict] = {
 # Abbreviazioni chiavi per run name leggibile
 KEY_ABBR: dict[str, str] = {
     "learning_rate":     "lr",
+    "gamma":             "g",
     "batch_size":        "bs",
     "gradient_steps":    "gs",
+    "learning_starts":   "ls",
+    "tau":               "tau",
+    "train_freq":        "tf",
     "sampling_strategy": "dr",
     "ent_coef":          "ec",
     "n_steps":           "ns",
     "clip_range":        "cr",
+    "gae_lambda":        "gae",
     "n_envs":            "ne",
     "her":               "her",
 }
@@ -82,14 +122,19 @@ KEY_ABBR: dict[str, str] = {
 # Mappatura nome parametro → flag CLI
 SAC_FLAG_MAP: dict[str, str] = {
     "learning_rate":    "--learning-rate",
+    "gamma":            "--gamma",
     "batch_size":       "--batch-size",
     "gradient_steps":   "--gradient-steps",
+    "learning_starts":  "--learning-starts",
+    "tau":              "--tau",
+    "train_freq":       "--train-freq",
     "her":              "--her",          # store_true
     "sampling_strategy": "--sampling-strategy",
 }
 
 PPO_FLAG_MAP: dict[str, str] = {
     "learning_rate":    "--learning-rate",
+    "gamma":            "--gamma",
     "ent_coef":         "--ent-coef",
     "n_steps":          "--n-steps",
     "clip_range":       "--clip-range",
@@ -100,8 +145,8 @@ PPO_FLAG_MAP: dict[str, str] = {
 
 # Timesteps per smoke test (piccoli ma validi per entrambi gli algoritmi)
 SMOKE_TIMESTEPS = {
-    "sac": 2500,   # ~5 episodi (max_episode_steps=500): supera log_interval=4 e learning_starts=100
-    "ppo": 3000,   # circa 1 rollout con n_steps=2048; con n_envs>1 ne fa comunque 1 completo
+    "sac": 2500,   # ~5 episodi (max_episode_steps=500): supera learning_starts=1000
+    "ppo": 3000,   # SB3 completa almeno 1 rollout: con n_envs=8 puo' superare questo numero
 }
 
 DEFAULT_TIMESTEPS = 500_000
@@ -117,16 +162,26 @@ def grid_combinations(grid: dict) -> list[dict]:
     ]
 
 
+def format_value(value) -> str:
+    if isinstance(value, bool):
+        return str(int(value))
+
+    if isinstance(value, float):
+        if value == 0:
+            return "0"
+        if abs(value) < 1e-2 or abs(value) >= 10:
+            mantissa, exponent = f"{value:.0e}".split("e")
+            return f"{mantissa}e{int(exponent)}"
+        return f"{value:g}".replace(".", "p")
+
+    return str(value)
+
+
 def make_run_name(algorithm: str, profile: int, params: dict) -> str:
     parts = [algorithm.upper(), str(profile)]
     for k, v in params.items():
         key = KEY_ABBR.get(k, k)
-        if isinstance(v, float):
-            parts.append(f"{key}{v:.0e}")
-        elif isinstance(v, bool):
-            parts.append(f"{key}{int(v)}")
-        else:
-            parts.append(f"{key}{v}")
+        parts.append(f"{key}{format_value(v)}")
     return "_".join(parts)
 
 

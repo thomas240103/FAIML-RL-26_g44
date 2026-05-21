@@ -15,7 +15,7 @@ from stable_baselines3.her.her_replay_buffer import HerReplayBuffer
 PPO_ONLY = {"n_envs", "ent_coef", "n_steps", "clip_range", "gae_lambda"}
 SAC_ONLY = {"her", "batch_size", "gradient_steps",
             "learning_starts", "buffer_size", "tau", "train_freq", "device"}
-# learning_rate è condiviso tra PPO e SAC
+# learning_rate e gamma sono condivisi tra PPO e SAC
 
 
 # ─── Parsing e validazione ────────────────────────────────────────────────────
@@ -39,6 +39,8 @@ def parse_args() -> argparse.Namespace:
                         help="Nome file del modello salvato (override del nome automatico)")
     parser.add_argument("--learning-rate", type=float, default=None,
                         help="[PPO/SAC] Learning rate")
+    parser.add_argument("--gamma", type=float, default=None,
+                        help="[PPO/SAC] Discount factor")
 
     # PPO only
     parser.add_argument("--n-envs", type=int, default=None,
@@ -92,6 +94,8 @@ def _validate_and_set_defaults(args: argparse.Namespace) -> None:
         # Default PPO
         if args.learning_rate is None:
             args.learning_rate = 3e-4
+        if args.gamma is None:
+            args.gamma = 0.99
         if args.n_envs is None:
             args.n_envs = 1
         if args.ent_coef is None:
@@ -117,6 +121,8 @@ def _validate_and_set_defaults(args: argparse.Namespace) -> None:
         # Default SAC
         if args.learning_rate is None:
             args.learning_rate = 3e-4
+        if args.gamma is None:
+            args.gamma = 0.99
         if args.her is None:
             args.her = False
         if args.batch_size is None:
@@ -166,7 +172,7 @@ def train_ppo(args: argparse.Namespace) -> None:
         env,
         learning_rate=args.learning_rate,
         n_steps=args.n_steps,
-        gamma=0.99,
+        gamma=args.gamma,
         clip_range=args.clip_range,
         ent_coef=args.ent_coef,
         gae_lambda=args.gae_lambda,
@@ -202,6 +208,7 @@ def train_sac(args: argparse.Namespace) -> None:
         "MultiInputPolicy",
         env,
         learning_rate=args.learning_rate,
+        gamma=args.gamma,
         batch_size=args.batch_size,
         gradient_steps=args.gradient_steps,
         learning_starts=args.learning_starts,
@@ -238,10 +245,12 @@ def main() -> None:
           f"Steps: {args.timesteps} | Seed: {args.seed}")
     if args.algorithm == "ppo":
         print(f"PPO       : n_envs={args.n_envs} | lr={args.learning_rate} | "
+              f"gamma={args.gamma} | "
               f"ent_coef={args.ent_coef} | n_steps={args.n_steps} | "
               f"clip={args.clip_range} | gae_lambda={args.gae_lambda}")
     else:
         print(f"SAC       : her={args.her} | lr={args.learning_rate} | "
+              f"gamma={args.gamma} | "
               f"batch={args.batch_size} | grad_steps={args.gradient_steps} | "
               f"device={args.device}")
 
