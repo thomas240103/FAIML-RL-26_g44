@@ -165,7 +165,7 @@ def train_ppo(args: argparse.Namespace) -> None:
     env_fns = [make_env(args.env_type, args.sampling_strategy, args.seed, i)
                for i in range(args.n_envs)]
     env = SubprocVecEnv(env_fns) if args.n_envs > 1 else DummyVecEnv(env_fns)
-    env = VecNormalize(env, norm_obs=True, norm_reward=False, clip_obs=10.)
+    #env = VecNormalize(env, norm_obs=True, norm_reward=False, clip_obs=10.)
 
     model = PPO(
         "MultiInputPolicy",
