@@ -215,7 +215,7 @@ def train_sac(args: argparse.Namespace) -> None:
         buffer_size=args.buffer_size,
         tau=args.tau,
         train_freq=args.train_freq,
-        ent_coef="auto_0.1",
+        ent_coef="auto",
         verbose=1,
         tensorboard_log="./tb_logs/",
         seed=args.seed,
