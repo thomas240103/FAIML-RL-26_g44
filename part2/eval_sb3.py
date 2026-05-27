@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 
 import gymnasium as gym
 import numpy as np
@@ -48,6 +49,7 @@ def evaluate(
     deterministic: bool,
     render: bool,
     env_type: str,
+    render_delay: float = 0.0,
 ) -> None:
     if not os.path.exists(model_path):
         raise FileNotFoundError(
@@ -78,6 +80,8 @@ def evaluate(
             action, _ = model.predict(obs, deterministic=deterministic)
             obs, reward, terminated, truncated, info = env.step(action)
             episode_return += float(reward)
+            if render and render_delay > 0.0:
+                time.sleep(render_delay)
 
         episode_returns.append(episode_return)
 
@@ -134,6 +138,12 @@ def parse_args() -> argparse.Namespace:
         help="Render with a window (render_mode='human')",
     )
     parser.add_argument(
+        "--render-delay",
+        type=float,
+        default=0.0,
+        help="Seconds to sleep between steps when rendering (e.g. 0.05 for ~20 FPS)",
+    )
+    parser.add_argument(
         "--env-type",
         type=str,
         default="target",
@@ -152,4 +162,5 @@ if __name__ == "__main__":
         deterministic=not args.stochastic,
         render=args.render,
         env_type=args.env_type,
+        render_delay=args.render_delay,
     )
