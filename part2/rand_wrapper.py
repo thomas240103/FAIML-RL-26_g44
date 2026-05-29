@@ -6,11 +6,11 @@ import numpy as np
 
 class RandomizationWrapper(gym.Wrapper):
     """
-    Wrapper that randomizes the pushed object's mass at reset time.
+    Wrapper that randomizes physical parameters at reset time.
 
     Modes:
     - `none`: keep the nominal environment mass unchanged
-    - `udr`: sample uniformly from the full mass range
+    - `udr`: sample uniformly from the full mass/friction ranges
     - `adr`: sample from an adaptive range that expands/shrinks based on success
     """
 
@@ -18,6 +18,9 @@ class RandomizationWrapper(gym.Wrapper):
         self,
         env,
         mass_range=(1.0, 5.0),
+        object_lateral_friction_range=(0.5, 1.2),
+        table_lateral_friction_range=(0.5, 1.2),
+        object_spinning_friction_range=(0.0, 0.005),
         mode="none",
         adr_window=20,
         adr_high_threshold=0.8,
@@ -32,16 +35,47 @@ class RandomizationWrapper(gym.Wrapper):
         mass_min_limit, mass_max_limit = mass_range
         if mass_min_limit <= 0 or mass_min_limit > mass_max_limit:
             raise ValueError(f"Invalid mass_range: {mass_range}")
+        self._validate_nonnegative_range(
+            "object_lateral_friction_range",
+            object_lateral_friction_range,
+        )
+        self._validate_nonnegative_range(
+            "table_lateral_friction_range",
+            table_lateral_friction_range,
+        )
+        self._validate_nonnegative_range(
+            "object_spinning_friction_range",
+            object_spinning_friction_range,
+        )
 
         self.mode = mode
         self.mass_range = mass_range
+        self.object_lateral_friction_range = object_lateral_friction_range
+        self.table_lateral_friction_range = table_lateral_friction_range
+        self.object_spinning_friction_range = object_spinning_friction_range
 
         # Global limits allowed by domain randomization.
         self.mass_min_limit = float(mass_min_limit)
         self.mass_max_limit = float(mass_max_limit)
+        self.object_lateral_friction_min, self.object_lateral_friction_max = map(
+            float,
+            object_lateral_friction_range,
+        )
+        self.table_lateral_friction_min, self.table_lateral_friction_max = map(
+            float,
+            table_lateral_friction_range,
+        )
+        self.object_spinning_friction_min, self.object_spinning_friction_max = map(
+            float,
+            object_spinning_friction_range,
+        )
 
         # Nominal mass comes from the underlying environment definition.
         self.nominal_mass = float(self.env.unwrapped.task.current_mass)
+        nominal_friction = self._get_nominal_friction()
+        self.nominal_object_lateral_friction = nominal_friction["object_lateral"]
+        self.nominal_table_lateral_friction = nominal_friction["table_lateral"]
+        self.nominal_object_spinning_friction = nominal_friction["object_spinning"]
 
         # Current ADR sampling range.
         self.mass_min = self.nominal_mass
@@ -56,6 +90,9 @@ class RandomizationWrapper(gym.Wrapper):
 
         self.last_sample_type = "fixed"
         self.last_mass = self.nominal_mass
+        self.last_object_lateral_friction = self.nominal_object_lateral_friction
+        self.last_table_lateral_friction = self.nominal_table_lateral_friction
+        self.last_object_spinning_friction = self.nominal_object_spinning_friction
 
         if self.mode == "udr":
             self.mass_min = self.mass_min_limit
@@ -64,6 +101,26 @@ class RandomizationWrapper(gym.Wrapper):
             # Start from the nominal mass and widen only when the policy succeeds.
             self.mass_min = self.nominal_mass
             self.mass_max = self.nominal_mass
+
+    @staticmethod
+    def _validate_nonnegative_range(name: str, value_range) -> None:
+        low, high = value_range
+        if low < 0 or high < 0 or low > high:
+            raise ValueError(f"Invalid {name}: {value_range}")
+
+    def _get_dynamics_info(self, body_name: str) -> tuple:
+        sim = self.env.unwrapped.task.sim
+        body_id = sim._bodies_idx[body_name]
+        return sim.physics_client.getDynamicsInfo(body_id, -1)
+
+    def _get_nominal_friction(self) -> dict[str, float]:
+        object_info = self._get_dynamics_info("object")
+        table_info = self._get_dynamics_info("table")
+        return {
+            "object_lateral": float(object_info[1]),
+            "table_lateral": float(table_info[1]),
+            "object_spinning": float(object_info[7]),
+        }
 
     def _uniform(self, low: float, high: float) -> float:
         rng = getattr(self.env.unwrapped, "np_random", None)
@@ -88,6 +145,31 @@ class RandomizationWrapper(gym.Wrapper):
             return self.last_mass
 
         raise NotImplementedError(f"Sampling strategy '{self.mode}' is not implemented.")
+
+    def _sample_friction(self):
+        if self.mode != "udr":
+            self.last_object_lateral_friction = self.nominal_object_lateral_friction
+            self.last_table_lateral_friction = self.nominal_table_lateral_friction
+            self.last_object_spinning_friction = self.nominal_object_spinning_friction
+            return None
+
+        self.last_object_lateral_friction = self._uniform(
+            self.object_lateral_friction_min,
+            self.object_lateral_friction_max,
+        )
+        self.last_table_lateral_friction = self._uniform(
+            self.table_lateral_friction_min,
+            self.table_lateral_friction_max,
+        )
+        self.last_object_spinning_friction = self._uniform(
+            self.object_spinning_friction_min,
+            self.object_spinning_friction_max,
+        )
+        return {
+            "object_lateral": self.last_object_lateral_friction,
+            "table_lateral": self.last_table_lateral_friction,
+            "object_spinning": self.last_object_spinning_friction,
+        }
 
     def _update_adr_range(self) -> None:
         if self.mode != "adr" or len(self.success_history) < self.adr_window:
@@ -121,21 +203,46 @@ class RandomizationWrapper(gym.Wrapper):
 
     def reset(self, **kwargs):
         new_mass = self._sample_mass()
+        new_friction = self._sample_friction()
 
         if new_mass is not None:
-            sim = self.env.unwrapped.task.sim
-            object_body_id = sim._bodies_idx["object"]
+            self._set_object_mass(new_mass)
 
-            sim.physics_client.changeDynamics(
-                bodyUniqueId=object_body_id,
-                linkIndex=-1,
-                mass=float(new_mass),
-            )
+        if new_friction is not None:
+            self._set_friction(new_friction)
+
+        if new_mass is not None:
+            friction_text = ""
+            if new_friction is not None:
+                friction_text = (
+                    f" object_mu={new_friction['object_lateral']:.4f}"
+                    f" table_mu={new_friction['table_lateral']:.4f}"
+                    f" object_spin={new_friction['object_spinning']:.4f}"
+                )
 
             print(
                 f"[{self.mode}] mass={new_mass:.2f} "
                 f"range=[{self.mass_min:.2f},{self.mass_max:.2f}] "
                 f"type={self.last_sample_type}"
+                f"{friction_text}"
             )
 
         return super().reset(**kwargs)
+
+    def _set_object_mass(self, mass: float) -> None:
+        task = self.env.unwrapped.task
+        sim = task.sim
+        object_body_id = sim._bodies_idx["object"]
+
+        sim.physics_client.changeDynamics(
+            bodyUniqueId=object_body_id,
+            linkIndex=-1,
+            mass=float(mass),
+        )
+        task.current_mass = float(mass)
+
+    def _set_friction(self, friction: dict[str, float]) -> None:
+        sim = self.env.unwrapped.task.sim
+        sim.set_lateral_friction("object", -1, friction["object_lateral"])
+        sim.set_lateral_friction("table", -1, friction["table_lateral"])
+        sim.set_spinning_friction("object", -1, friction["object_spinning"])
