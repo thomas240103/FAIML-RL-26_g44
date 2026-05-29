@@ -77,9 +77,15 @@ class RandomizationWrapper(gym.Wrapper):
         self.nominal_table_lateral_friction = nominal_friction["table_lateral"]
         self.nominal_object_spinning_friction = nominal_friction["object_spinning"]
 
-        # Current ADR sampling range.
+        # Current ADR sampling ranges (start at nominal, widen on success).
         self.mass_min = self.nominal_mass
         self.mass_max = self.nominal_mass
+        self.obj_lat_fric_min = self.nominal_object_lateral_friction
+        self.obj_lat_fric_max = self.nominal_object_lateral_friction
+        self.table_lat_fric_min = self.nominal_table_lateral_friction
+        self.table_lat_fric_max = self.nominal_table_lateral_friction
+        self.obj_spin_fric_min = self.nominal_object_spinning_friction
+        self.obj_spin_fric_max = self.nominal_object_spinning_friction
 
         # Keep a short success history to adapt the ADR range.
         self.success_history = deque(maxlen=adr_window)
@@ -97,8 +103,13 @@ class RandomizationWrapper(gym.Wrapper):
         if self.mode == "udr":
             self.mass_min = self.mass_min_limit
             self.mass_max = self.mass_max_limit
+            self.obj_lat_fric_min = self.object_lateral_friction_min
+            self.obj_lat_fric_max = self.object_lateral_friction_max
+            self.table_lat_fric_min = self.table_lateral_friction_min
+            self.table_lat_fric_max = self.table_lateral_friction_max
+            self.obj_spin_fric_min = self.object_spinning_friction_min
+            self.obj_spin_fric_max = self.object_spinning_friction_max
         elif self.mode == "adr":
-            # Start from the nominal mass and widen only when the policy succeeds.
             self.mass_min = self.nominal_mass
             self.mass_max = self.nominal_mass
 
@@ -147,24 +158,16 @@ class RandomizationWrapper(gym.Wrapper):
         raise NotImplementedError(f"Sampling strategy '{self.mode}' is not implemented.")
 
     def _sample_friction(self):
-        if self.mode != "udr":
+        if self.mode == "none":
             self.last_object_lateral_friction = self.nominal_object_lateral_friction
             self.last_table_lateral_friction = self.nominal_table_lateral_friction
             self.last_object_spinning_friction = self.nominal_object_spinning_friction
             return None
 
-        self.last_object_lateral_friction = self._uniform(
-            self.object_lateral_friction_min,
-            self.object_lateral_friction_max,
-        )
-        self.last_table_lateral_friction = self._uniform(
-            self.table_lateral_friction_min,
-            self.table_lateral_friction_max,
-        )
-        self.last_object_spinning_friction = self._uniform(
-            self.object_spinning_friction_min,
-            self.object_spinning_friction_max,
-        )
+        # udr: ranges are set to full limits at construction; adr: ranges adapt over time.
+        self.last_object_lateral_friction = self._uniform(self.obj_lat_fric_min, self.obj_lat_fric_max)
+        self.last_table_lateral_friction = self._uniform(self.table_lat_fric_min, self.table_lat_fric_max)
+        self.last_object_spinning_friction = self._uniform(self.obj_spin_fric_min, self.obj_spin_fric_max)
         return {
             "object_lateral": self.last_object_lateral_friction,
             "table_lateral": self.last_table_lateral_friction,
@@ -178,16 +181,43 @@ class RandomizationWrapper(gym.Wrapper):
         success_rate = float(np.mean(self.success_history))
         self.success_history.clear()
 
-        if success_rate >= self.adr_high_threshold:
-            self.mass_min = max(self.mass_min_limit, self.mass_min - self.adr_step)
-            self.mass_max = min(self.mass_max_limit, self.mass_max + self.adr_step)
-        elif success_rate <= self.adr_low_threshold:
-            self.mass_min = min(self.nominal_mass, self.mass_min + self.adr_step)
-            self.mass_max = max(self.nominal_mass, self.mass_max - self.adr_step)
+        mass_step = self.adr_step * (self.mass_max_limit - self.nominal_mass)
+        obj_lat_step = self.adr_step * (self.object_lateral_friction_max - self.object_lateral_friction_min)
+        table_lat_step = self.adr_step * (self.table_lateral_friction_max - self.table_lateral_friction_min)
+        obj_spin_step = self.adr_step * (self.object_spinning_friction_max - self.object_spinning_friction_min)
 
-            if self.mass_min > self.mass_max:
-                self.mass_min = self.nominal_mass
-                self.mass_max = self.nominal_mass
+        if success_rate >= self.adr_high_threshold:
+            # mass: one-sided — only expand upward toward target domain
+            self.mass_max = min(self.mass_max_limit, self.mass_max + mass_step)
+            # friction: two-sided
+            self.obj_lat_fric_min = max(self.object_lateral_friction_min, self.obj_lat_fric_min - obj_lat_step)
+            self.obj_lat_fric_max = min(self.object_lateral_friction_max, self.obj_lat_fric_max + obj_lat_step)
+            self.table_lat_fric_min = max(self.table_lateral_friction_min, self.table_lat_fric_min - table_lat_step)
+            self.table_lat_fric_max = min(self.table_lateral_friction_max, self.table_lat_fric_max + table_lat_step)
+            self.obj_spin_fric_min = max(self.object_spinning_friction_min, self.obj_spin_fric_min - obj_spin_step)
+            self.obj_spin_fric_max = min(self.object_spinning_friction_max, self.obj_spin_fric_max + obj_spin_step)
+        elif success_rate <= self.adr_low_threshold:
+            self.mass_max = max(self.nominal_mass, self.mass_max - mass_step)
+            self.obj_lat_fric_min = min(self.nominal_object_lateral_friction, self.obj_lat_fric_min + obj_lat_step)
+            self.obj_lat_fric_max = max(self.nominal_object_lateral_friction, self.obj_lat_fric_max - obj_lat_step)
+            if self.obj_lat_fric_min > self.obj_lat_fric_max:
+                self.obj_lat_fric_min = self.obj_lat_fric_max = self.nominal_object_lateral_friction
+            self.table_lat_fric_min = min(self.nominal_table_lateral_friction, self.table_lat_fric_min + table_lat_step)
+            self.table_lat_fric_max = max(self.nominal_table_lateral_friction, self.table_lat_fric_max - table_lat_step)
+            if self.table_lat_fric_min > self.table_lat_fric_max:
+                self.table_lat_fric_min = self.table_lat_fric_max = self.nominal_table_lateral_friction
+            self.obj_spin_fric_min = min(self.nominal_object_spinning_friction, self.obj_spin_fric_min + obj_spin_step)
+            self.obj_spin_fric_max = max(self.nominal_object_spinning_friction, self.obj_spin_fric_max - obj_spin_step)
+            if self.obj_spin_fric_min > self.obj_spin_fric_max:
+                self.obj_spin_fric_min = self.obj_spin_fric_max = self.nominal_object_spinning_friction
+
+        print(
+            f"[adr:update] success_rate={success_rate:.2f} "
+            f"mass=[{self.mass_min:.2f},{self.mass_max:.2f}] "
+            f"obj_lat=[{self.obj_lat_fric_min:.4f},{self.obj_lat_fric_max:.4f}] "
+            f"table_lat=[{self.table_lat_fric_min:.4f},{self.table_lat_fric_max:.4f}] "
+            f"obj_spin=[{self.obj_spin_fric_min:.6f},{self.obj_spin_fric_max:.6f}]"
+        )
 
     def step(self, action):
         obs, reward, terminated, truncated, info = self.env.step(action)
