@@ -23,8 +23,8 @@ class RandomizationWrapper(gym.Wrapper):
         object_spinning_friction_range=(0.0, 0.005),
         mode="none",
         adr_window=20,
-        adr_high_threshold=0.8,
-        adr_low_threshold=0.2,
+        adr_high_threshold=0.70,
+        adr_low_threshold=0.35,
         adr_step=0.25,
     ):
         super().__init__(env)
