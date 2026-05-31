@@ -3,6 +3,12 @@
     Here you will implement the training loop for REINFORCE and Actor-Critic
 """
 import argparse
+import os
+from pathlib import Path
+
+os.environ.setdefault("MPLCONFIGDIR", str(Path("part1/.matplotlib").resolve()))
+os.environ.setdefault("XDG_CACHE_HOME", str(Path("part1/.cache").resolve()))
+
 import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
@@ -197,7 +203,22 @@ def main():
     if run_name is None:
         baseline_tag = f"_baseline_{args.baseline:g}" if args.alg == "reinforce" and args.baseline != 0 else ""
         run_name = f"{args.alg}{baseline_tag}_seed_{args.seed}"
-    plt.savefig(f'part1/plots/{run_name}_learning_curve.png', dpi=150)
+
+    plots_dir = Path("part1/plots")
+    results_dir = Path("part1/results")
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    results_dir.mkdir(parents=True, exist_ok=True)
+
+    np.savez(
+        results_dir / f"{run_name}.npz",
+        train_returns=np.array(train_returns, dtype=np.float32),
+        eval_episodes=np.array(eval_episodes, dtype=np.int32),
+        eval_returns=np.array(eval_returns, dtype=np.float32),
+        algorithm=args.alg,
+        baseline=np.array(args.baseline, dtype=np.float32),
+        seed=np.array(args.seed, dtype=np.int32),
+    )
+    plt.savefig(plots_dir / f'{run_name}_learning_curve.png', dpi=150)
     if not args.no_show:
         plt.show()
     plt.close()

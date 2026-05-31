@@ -24,7 +24,7 @@ def main():
 
     for ep in range(n_episodes):  
         done = False
-        #state, info = env.reset()  # Reset environment to initial state
+        state, info = env.reset()  # Reset environment to initial state
 
         while not done:  # Until the episode is over
             action = env.action_space.sample()  # Sample random action
