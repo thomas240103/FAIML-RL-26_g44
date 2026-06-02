@@ -56,6 +56,16 @@ SAC_PROFILES: dict[int, dict] = {
         "her":             [True],
         "sampling_strategy": ["none"],
     },
+    5: {  # Config ottimale da letteratura (RL Zoo FetchReach + SAC paper)
+        "learning_rate":   [1e-3],
+        "gamma":           [0.95],
+        "batch_size":      [256],
+        "gradient_steps":  [1],
+        "learning_starts": [1000],
+        "tau":             [0.005],
+        "her":             [True],
+        "sampling_strategy": ["none"],
+    },
 }
 
 PPO_PROFILES: dict[int, dict] = {
@@ -80,9 +90,9 @@ PPO_PROFILES: dict[int, dict] = {
         "sampling_strategy": ["none"],
     },
     3: {  # Domain randomization per transfer source->target
-        "learning_rate":   [3e-4, 1e-4, 0.001],
-        "gamma":           [0.92, 0.95],
-        "n_steps":         [1024, 512],
+        "learning_rate":   [3e-4, 1e-4],
+        "gamma":           [0.90],
+        "n_steps":         [1024],
         "clip_range":      [0.2],
         "gae_lambda":      [0.95],
         "ent_coef":        [0.001, 0.005],
@@ -98,6 +108,17 @@ PPO_PROFILES: dict[int, dict] = {
         "gae_lambda":      [0.95],
         "ent_coef":        [0.001, 0.005],
         "n_envs":          [4],
+        "sampling_strategy": ["none"],
+    },
+    5: {  # Config ottimale da letteratura (Baptista 2024, Fetch manipulation)
+        "learning_rate":   [3e-4],
+        "gamma":           [0.95],
+        "n_steps":         [2048],
+        "n_epochs":        [10],
+        "clip_range":      [0.1],
+        "gae_lambda":      [0.95],
+        "ent_coef":        [0.001],
+        "n_envs":          [8],
         "sampling_strategy": ["none"],
     },
 }
@@ -117,6 +138,7 @@ KEY_ABBR: dict[str, str] = {
     "clip_range":        "cr",
     "gae_lambda":        "gae",
     "n_envs":            "ne",
+    "n_epochs":          "ep",
     "her":               "her",
 }
 
@@ -138,6 +160,7 @@ PPO_FLAG_MAP: dict[str, str] = {
     "gamma":            "--gamma",
     "ent_coef":         "--ent-coef",
     "n_steps":          "--n-steps",
+    "n_epochs":         "--n-epochs",
     "clip_range":       "--clip-range",
     "gae_lambda":       "--gae-lambda",
     "n_envs":           "--n-envs",
@@ -150,7 +173,7 @@ SMOKE_TIMESTEPS = {
     "ppo": 3000,   # SB3 completa almeno 1 rollout: con n_envs=8 puo' superare questo numero
 }
 
-DEFAULT_TIMESTEPS = 500_000
+DEFAULT_TIMESTEPS = 10_000_000
 
 
 # ─── Utility ────────────────────────────────────────────────────────────────
@@ -261,7 +284,7 @@ def parse_args() -> argparse.Namespace:
         "--profile",
         type=int,
         required=True,
-        choices=[1, 2, 3, 4],
+        choices=[1, 2, 3, 4, 5],
         help="Profilo parametri (1-4)",
     )
     parser.add_argument(

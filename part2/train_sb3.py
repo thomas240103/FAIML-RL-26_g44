@@ -53,6 +53,8 @@ def parse_args() -> argparse.Namespace:
                         help="[PPO] Clipping del ratio policy (epsilon in PPO-clip)")
     parser.add_argument("--gae-lambda", type=float, default=None,
                         help="[PPO] Lambda per Generalized Advantage Estimation")
+    parser.add_argument("--n-epochs", type=int, default=None,
+                        help="[PPO] Numero di epoch per ogni rollout batch")
 
     # SAC only
     parser.add_argument("--her", action="store_true", default=None,
@@ -106,6 +108,8 @@ def _validate_and_set_defaults(args: argparse.Namespace) -> None:
             args.clip_range = 0.2
         if args.gae_lambda is None:
             args.gae_lambda = 0.95
+        if args.n_epochs is None:
+            args.n_epochs = 10
 
     elif args.algorithm == "sac":
         # Warn se passati flag PPO-only
@@ -172,6 +176,7 @@ def train_ppo(args: argparse.Namespace) -> None:
         env,
         learning_rate=args.learning_rate,
         n_steps=args.n_steps,
+        n_epochs=args.n_epochs,
         gamma=args.gamma,
         clip_range=args.clip_range,
         ent_coef=args.ent_coef,
