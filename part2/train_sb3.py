@@ -41,6 +41,22 @@ def parse_args() -> argparse.Namespace:
                         help="[PPO/SAC] Learning rate")
     parser.add_argument("--gamma", type=float, default=None,
                         help="[PPO/SAC] Discount factor")
+    parser.add_argument("--mass-min", type=float, default=1.0,
+                        help="Lower object-mass bound for UDR/ADR training")
+    parser.add_argument("--mass-max", type=float, default=5.0,
+                        help="Upper object-mass bound for UDR/ADR training")
+    parser.add_argument("--object-lateral-friction-min", type=float, default=0.5,
+                        help="Lower object lateral-friction bound for UDR/ADR training")
+    parser.add_argument("--object-lateral-friction-max", type=float, default=1.2,
+                        help="Upper object lateral-friction bound for UDR/ADR training")
+    parser.add_argument("--table-lateral-friction-min", type=float, default=0.5,
+                        help="Lower table lateral-friction bound for UDR/ADR training")
+    parser.add_argument("--table-lateral-friction-max", type=float, default=1.2,
+                        help="Upper table lateral-friction bound for UDR/ADR training")
+    parser.add_argument("--object-spinning-friction-min", type=float, default=0.0,
+                        help="Lower object spinning-friction bound for UDR/ADR training")
+    parser.add_argument("--object-spinning-friction-max", type=float, default=0.005,
+                        help="Upper object spinning-friction bound for UDR/ADR training")
 
     # PPO only
     parser.add_argument("--n-envs", type=int, default=None,
@@ -143,7 +159,16 @@ def _validate_and_set_defaults(args: argparse.Namespace) -> None:
 
 # ─── Costruzione ambiente ─────────────────────────────────────────────────────
 
-def make_env(env_type: str, sampling_strategy: str, seed: int, rank: int = 0):
+def make_env(
+    env_type: str,
+    sampling_strategy: str,
+    seed: int,
+    rank: int = 0,
+    mass_range=(1.0, 5.0),
+    object_lateral_friction_range=(0.5, 1.2),
+    table_lateral_friction_range=(0.5, 1.2),
+    object_spinning_friction_range=(0.0, 0.005),
+):
     def _init():
         env = gym.make(
             "PandaPush-v3",
@@ -152,7 +177,14 @@ def make_env(env_type: str, sampling_strategy: str, seed: int, rank: int = 0):
             type=env_type,
             reward_type="dense",
         )
-        env = RandomizationWrapper(env, mass_range=(1.0, 5.0), mode=sampling_strategy)
+        env = RandomizationWrapper(
+            env,
+            mass_range=mass_range,
+            object_lateral_friction_range=object_lateral_friction_range,
+            table_lateral_friction_range=table_lateral_friction_range,
+            object_spinning_friction_range=object_spinning_friction_range,
+            mode=sampling_strategy,
+        )
         env = RewardShapingWrapper(env, bonus_distance=0.05, bonus=1.0, time_penalty=1e-2)
         env.reset(seed=seed + rank)
         return env
@@ -162,8 +194,28 @@ def make_env(env_type: str, sampling_strategy: str, seed: int, rank: int = 0):
 # ─── Training PPO ─────────────────────────────────────────────────────────────
 
 def train_ppo(args: argparse.Namespace) -> None:
-    env_fns = [make_env(args.env_type, args.sampling_strategy, args.seed, i)
-               for i in range(args.n_envs)]
+    env_fns = [
+        make_env(
+            args.env_type,
+            args.sampling_strategy,
+            args.seed,
+            i,
+            mass_range=(args.mass_min, args.mass_max),
+            object_lateral_friction_range=(
+                args.object_lateral_friction_min,
+                args.object_lateral_friction_max,
+            ),
+            table_lateral_friction_range=(
+                args.table_lateral_friction_min,
+                args.table_lateral_friction_max,
+            ),
+            object_spinning_friction_range=(
+                args.object_spinning_friction_min,
+                args.object_spinning_friction_max,
+            ),
+        )
+        for i in range(args.n_envs)
+    ]
     env = SubprocVecEnv(env_fns) if args.n_envs > 1 else DummyVecEnv(env_fns)
     #env = VecNormalize(env, norm_obs=True, norm_reward=False, clip_obs=10.)
 
@@ -196,7 +248,24 @@ def train_ppo(args: argparse.Namespace) -> None:
 # ─── Training SAC ─────────────────────────────────────────────────────────────
 
 def train_sac(args: argparse.Namespace) -> None:
-    env = make_env(args.env_type, args.sampling_strategy, args.seed)()
+    env = make_env(
+        args.env_type,
+        args.sampling_strategy,
+        args.seed,
+        mass_range=(args.mass_min, args.mass_max),
+        object_lateral_friction_range=(
+            args.object_lateral_friction_min,
+            args.object_lateral_friction_max,
+        ),
+        table_lateral_friction_range=(
+            args.table_lateral_friction_min,
+            args.table_lateral_friction_max,
+        ),
+        object_spinning_friction_range=(
+            args.object_spinning_friction_min,
+            args.object_spinning_friction_max,
+        ),
+    )()
 
     replay_buffer_class = HerReplayBuffer if args.her else None
     replay_buffer_kwargs = dict(
@@ -243,6 +312,13 @@ def main() -> None:
     print(f"Algorithm : {args.algorithm.upper()}")
     print(f"Strategy  : {args.sampling_strategy} | Env: {args.env_type} | "
           f"Steps: {args.timesteps} | Seed: {args.seed}")
+    print(
+        "DR ranges : "
+        f"mass=[{args.mass_min},{args.mass_max}] | "
+        f"obj_mu=[{args.object_lateral_friction_min},{args.object_lateral_friction_max}] | "
+        f"table_mu=[{args.table_lateral_friction_min},{args.table_lateral_friction_max}] | "
+        f"obj_spin=[{args.object_spinning_friction_min},{args.object_spinning_friction_max}]"
+    )
     if args.algorithm == "ppo":
         print(f"PPO       : n_envs={args.n_envs} | lr={args.learning_rate} | "
               f"gamma={args.gamma} | "

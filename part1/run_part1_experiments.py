@@ -4,14 +4,14 @@ import sys
 
 
 EXPERIMENTS = [
-#    {
-#        "name": "reinforce_no_baseline",
-#        "args": ["--alg", "reinforce"],
-#    },
-#    {
-#        "name": "reinforce_baseline_20",
-#        "args": ["--alg", "reinforce", "--baseline", "20"],
-#    },
+    {
+        "name": "reinforce_no_baseline",
+        "args": ["--alg", "reinforce"],
+    },
+    {
+        "name": "reinforce_baseline_20",
+        "args": ["--alg", "reinforce", "--baseline", "20"],
+    },
     {
         "name": "actor_critic",
         "args": ["--alg", "actor-critic"],

@@ -1,43 +1,13 @@
 \section{Experimental Results}
 \subsection{Part 1: Hopper}
-The Part 1 implementation produced learning-curve plots for REINFORCE without baseline, REINFORCE with a constant baseline of 20, and the actor-critic variant. The plots show that all three runs can eventually reach high returns, but the learning curves are noisy and single-seed only. The constant baseline improves the early REINFORCE curve relative to the no-baseline run, but it does not remove instability. The actor-critic run uses a learned value baseline and reaches high return near the end of training, although it also exhibits long low-return phases.
+Figure~\ref{fig:part1-train-comparison} compares REINFORCE without baseline, REINFORCE with a constant baseline of 20, and the actor-critic variant over seeds 0, 42, and 99. All methods improve from the initial policy, but the curves remain noisy, as expected for policy-gradient training on Hopper. The constant baseline gives the strongest final training curve and reduces some early variance relative to plain REINFORCE. The actor-critic variant learns more slowly and reaches lower average returns in this implementation.
 
-\begin{table}[H]
+\begin{figure}[H]
 \centering
-\small
-\begin{tabular}{p{0.34\linewidth}ccc}
-\toprule
-Method & Seed & Episodes & Final metric \\
-\midrule
-REINFORCE & 0 & 3000 & \TODO{eval} \\
-REINFORCE, $b=20$ & 0 & 3000 & \TODO{eval} \\
-Actor-critic & 0 & 3000 & \TODO{eval} \\
-\bottomrule
-\end{tabular}
-\caption{Part 1 runs currently available as plots in \texttt{part1/plots/}. The final report should fill this table with deterministic evaluation means and standard deviations, preferably over at least three seeds.}
-\label{tab:hopper-results}
-\end{table}
-
-\subsection{Part 2: Training Diagnostics}
-SAC was selected as the main Part 2 algorithm because the available logs show faster and more reliable success than PPO. The clearest SAC runs reach high training success after 500k steps. PPO logs are more variable: some runs remain near 0.15--0.19 success even after many updates, while one run reaches 0.87 around 2M steps. This is consistent with the expected advantage of off-policy SAC on goal-conditioned manipulation, especially when replay and optional HER are available.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcc}
-\toprule
-Run & Step & Train SR \\
-\midrule
-SAC none source & 499700 & 0.97 \\
-SAC none target & 499933 & 1.00 \\
-SAC UDR source & 499988 & 0.99 \\
-SAC UDR + friction & 499957 & 0.96 \\
-Best logged PPO run & 2015232 & 0.87 \\
-\bottomrule
-\end{tabular}
-\caption{Final TensorBoard training success rates from available logs. These are training diagnostics, not a substitute for the deterministic evaluation table.}
-\label{tab:training-diagnostics}
-\end{table}
+\includegraphics[width=\linewidth]{../part1/plots/comparison_train_mean_std.png}
+\caption{Part 1 training comparison on \texttt{Hopper-v4}. Curves show the 100-episode moving average of cumulative reward, averaged over seeds 0, 42, and 99; shaded regions show variability across seeds.}
+\label{fig:part1-train-comparison}
+\end{figure}
 
 \subsection{Nominal Sim-to-Sim Evaluation}
 Table~\ref{tab:nominal-eval} reports deterministic 50-episode evaluations generated from the saved SAC checkpoints. At the nominal target mass of 5 kg, the source-trained SAC policy already transfers well: the gap between source$\rightarrow$source and source$\rightarrow$target is small in success rate. The target-trained model is still the oracle upper bound.
@@ -47,13 +17,14 @@ Table~\ref{tab:nominal-eval} reports deterministic 50-episode evaluations genera
 \small
 \begin{tabular}{llcccc}
 \toprule
-Model & Evaluation & Mean return & Std return & Success & Mass \\
+Model & Evaluation & Mean return & Std return & Success \\
 \midrule
-SAC none source & source & -1.536 & 7.574 & 98\% & 1 kg \\
-SAC none source & target & -2.316 & 9.578 & 96\% & 5 kg \\
-SAC none target & target & -0.429 & 0.274 & 100\% & 5 kg \\
-SAC UDR + friction source & source & -9.761 & 46.666 & 94\% & 1 kg \\
-SAC UDR + friction source & target & -6.509 & 26.756 & 94\% & 5 kg \\
+SAC source  & target (easy) & - & - & -\\
+SAC target  & target (easy) & - & - & - \\
+SAC source \textbf{(Lower Bound)} & target (hard) & - & - & - \\
+SAC target \textbf{(Upper Bound)} & target (hard) & - & - & - \\
+SAC UDR + friction source & target (hard) & - & - & - \\
+SAC ADR + friction source & target (hard) & - & - & - \\
 \bottomrule
 \end{tabular}
 \caption{Available 50-episode deterministic SAC evaluations with fixed nominal mass and fixed nominal friction, seed 42. The UDR checkpoint is the saved \texttt{SAC\_udr\_source\_500k\_friction} model.}
