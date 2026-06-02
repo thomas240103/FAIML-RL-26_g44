@@ -1,6 +1,6 @@
 \section{Methodology}
 \subsection{Part 1: Policy Gradients on Hopper}
-The first part uses \texttt{Hopper-v4}, a continuous-control MuJoCo task. The action is continuous and the policy is stochastic. In \texttt{part1/agent.py}, the policy network is a two-hidden-layer MLP with 64 units per layer and \texttt{tanh} activations. The actor outputs the mean of a diagonal Gaussian distribution; the standard deviation is a learned parameter passed through \texttt{softplus}. All Part 1 experiments use Adam with learning rate $10^{-3}$ and discount factor $\gamma=0.99$.
+The first part uses \texttt{Hopper-v4}, a continuous-control MuJoCo task. The action is continuous and the policy is stochastic. In \texttt{part1/agent.py}, the policy network is a two-hidden-layer MLP with 64 units per layer and \texttt{tanh} activations. The actor outputs the mean of a diagonal Gaussian distribution; the standard deviation is a learned parameter passed through \texttt{softplus}. All Part 1 experiments use Adam with learning rate $3 \times 10^{-4}$ and discount factor $\gamma=0.99$.
 
 \paragraph{REINFORCE.}
 For an episode trajectory, the implementation computes Monte-Carlo returns
@@ -11,29 +11,72 @@ and minimizes the negative policy-gradient objective
 \begin{equation}
 \mathcal{L}_{\mathrm{PG}} = - \sum_t (G_t-b)\log \pi_\theta(a_t|s_t),
 \end{equation}
-where $b$ is either zero or a constant baseline. The implemented command-line interface allows changing the constant baseline with \texttt{--baseline}. The available plot file for the baseline run uses $b=20$.
+where $b$ is either zero or a constant baseline. 
 
 \paragraph{Actor-Critic Variant.}
-The actor-critic implementation uses the same actor network plus a critic head that predicts $V_\phi(s)$. The critic is trained by regression to Monte-Carlo returns, and the actor uses the estimated advantage
+The actor-critic implementation uses the same actor network plus a critic network that predicts $V_\phi(s)$. At each update, the critic is trained by regression to the one-step bootstrapped target
 \begin{equation}
-A_t = G_t - V_\phi(s_t).
+y_t = r_t + \gamma V_\phi(s_{t+1})(1-d_t),
 \end{equation}
-Thus, the implementation is an actor-critic policy-gradient variant with a learned value-function baseline, not a purely one-step TD actor-critic. Training and evaluation curves are saved under \texttt{part1/plots/}. Final multi-seed numerical summaries are still missing.
+where $d_t$ indicates episode termination and the next-state value is detached from the gradient. The actor uses the corresponding advantage estimate
+\begin{equation}
+A_t = y_t - V_\phi(s_t),
+\end{equation}
+which is normalized over the collected episode before computing the policy-gradient loss. 
 
 \subsection{Part 2: PandaPush Pipeline}
-The second part uses the local \texttt{panda-gym} copy. In \texttt{part2/panda-gym/panda\_gym/envs/tasks/push.py}, the source object mass is $1.0$ kg and the target object mass is $5.0$ kg. The goal position is fixed at the center of the table, while the object initial position is randomized in the $xy$ plane. The main training scripts use the dense task reward and an episode horizon of 500 steps.
+The second part uses the \texttt{panda-gym} environment. The source object mass is $1.0$ kg, while evaluation is performed on two target settings described in the evaluation protocol. The goal position is fixed at the center of the table, while the object initial position is randomized in the $xy$ plane. The training scripts use the dense task reward and an episode horizon of 500 steps.
 
-\paragraph{Stable-Baselines3 Training.}
-The main unified script is \texttt{part2/train\_sb3.py}. It supports PPO and SAC with \texttt{MultiInputPolicy}. The PPO configuration exposes learning rate, discount, number of steps, clipping range, entropy coefficient, GAE lambda, and the number of parallel environments. The SAC configuration exposes learning rate, discount, batch size, replay-buffer size, learning starts, target-network update coefficient, train frequency, gradient steps, and optional Hindsight Experience Replay (HER) \cite{andrychowicz2017her}. HER is implemented through the Stable-Baselines3 \texttt{HerReplayBuffer} with \texttt{n\_sampled\_goal=4} and \texttt{goal\_selection\_strategy="future"}.
+\paragraph{Training Setting}
 
-The representative SAC runs currently saved in \texttt{models/} were trained for 500k steps with seed 42. The best source SAC run uses learning rate $10^{-3}$, batch size 2048, replay buffer size $10^6$, learning starts 100k, $\tau=0.05$, and $\gamma=0.95$, according to \texttt{part2/commands.md}. \TODO{Confirm in the final report whether each saved SAC checkpoint used HER; the model directory names do not encode this if a custom run name was used.}
+The training was performed trying different hyperparameters, and then choosing 
+the ones that best performed. Table~\ref{tab:training-hyperparameters} reports the main hyperparameters used for the final SAC and PPO runs.
+
+\begin{table}[H]
+\centering
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcc}
+\toprule
+Hyperparameter & SAC & PPO \\
+\midrule
+Training steps & 500k & 500k \\
+Policy & \texttt{MultiInputPolicy} & \texttt{MultiInputPolicy} \\
+Learning rate & $10^{-3}$, $3e^{-4}$, $10^{-4}$ & $10^{-3}$, $3e^{-4}$, $10^{-4}$ \\
+Discount $\gamma$ & 0.95, 0.98, 0.99 & 0.95, 0.98, 0.99 \\
+Batch size & 512, 1024, 2048 & 512, 1024, 2048 \\
+Gradient steps / epochs & -1 & 5 \\
+Rollout steps & -- & 2048 \\
+Learning starts & 100k & -- \\
+Replay buffer size & $10^6$ & -- \\
+Target update $\tau$ & 0.05 & -- \\
+Entropy coefficient & auto & 0.01 \\
+GAE $\lambda$ & -- & 0.95 \\
+Clip range & -- & 0.2 \\
+Policy network & default SB3 & [512, 256, 128] \\
+\bottomrule
+\end{tabular}
+}
+\caption{Main hyperparameters used for the Part 2 Stable-Baselines3 training runs. Dashes indicate algorithm-specific parameters that are not used.}
+\label{tab:training-hyperparameters}
+\end{table}
 
 \paragraph{Reward Shaping.}
+
 The wrapper \texttt{part2/wrappers.py} changes only the scalar training reward, not the dynamics. The shaped reward is
 \begin{equation}
 r_{\mathrm{train}} = r_{\mathrm{env}} - p + B \mathbf{1}[d(o,g)<\epsilon],
 \end{equation}
-where $p$ is a per-step penalty, $B$ is a close-goal bonus, and $d(o,g)$ is the object-goal distance. In the unified script the values are $p=10^{-2}$, $B=1.0$, and $\epsilon=0.05$. Evaluation uses the environment reward directly, so success rate is not computed from the shaped reward.
+where:
+\begin{itemize}
+    \item $p$ is a per-step penalty,
+    \item $B$ is a close-goal bonus,
+    \item $d(o,g)$ is the object-goal distance
+\end{itemize}  
+The values used for the training are $p=10^{-2}$, $B=1.0$, and $\epsilon=0.05$. 
+
+Reward shaping was added on top of the dense environment reward to encourage faster goal reaching through a small per-step penalty and an additional bonus when the object is close to the target.
+Evaluation uses the environment reward directly, so success rate is not computed from the shaped reward.
 
 \paragraph{Domain Randomization.}
 The wrapper \texttt{part2/rand\_wrapper.py} implements three modes. In \texttt{none}, the nominal environment dynamics are kept. In \texttt{udr}, the wrapper samples a new mass and friction values at every reset. The current UDR training ranges are:
@@ -41,7 +84,25 @@ The wrapper \texttt{part2/rand\_wrapper.py} implements three modes. In \texttt{n
 m \sim \mathcal{U}(1,5), \quad
 \mu_{\mathrm{obj}},\mu_{\mathrm{table}} \sim \mathcal{U}(0.5,1.2),
 \end{equation}
-and object spinning friction is sampled from $\mathcal{U}(0,0.005)$. The mass is applied through PyBullet \texttt{changeDynamics}, while lateral and spinning friction are applied through the local PyBullet helper methods. In \texttt{adr}, the wrapper currently adapts only the mass range. It starts from the nominal mass and stores a window of 20 episode successes. If the mean success rate is at least 0.8, the mass range expands by 0.25 kg on each side within the global limits; if it is at most 0.2, the range contracts toward the nominal mass. Friction remains nominal in ADR.
+and object spinning friction is sampled from $\mathcal{U}(0,0.005)$.
+In \texttt{adr}, the wrapper starts from the nominal mass and friction and adapts the sampling ranges using a window of 20 episode outcomes. If the mean success rate is at least 0.70, the mass upper bound expands toward 5 kg and the friction ranges widen toward their global limits. If the mean success rate is at most 0.35, the ranges contract back toward the nominal values. With the default step size, the mass range expands by 1 kg per successful update, while lateral-friction ranges expand by 0.175 per update.
 
 \paragraph{Evaluation Protocol.}
-The evaluation script \texttt{part2/eval\_sb3.py} supports SAC and PPO checkpoints. It reports mean return, standard deviation, min/max return, final success rate from \texttt{info["is\_success"]}, and parameter-conditioned summaries. Standard fixed-domain evaluations use 50 deterministic episodes and seed 42. The harder stress evaluation samples mass uniformly in $[5,10]$ kg, object and table lateral friction in $[0.2,1.5]$, and object spinning friction in $[0,0.01]$. Center-of-mass randomization was discussed as a useful extension, but it is not part of the current repository state used for this draft. \TODO{Add center-of-mass randomization results only after the implementation and evaluation are present in the repo.}
+Each model is evaluated with deterministic actions for 50 episodes, using seeds 0, 42, and 99. The main metric is the final success rate, computed from \texttt{info["is\_success"]} at the end of each episode. We use two target settings: an easy fixed target with the nominal target mass, and a hard target where mass and friction are randomized at test time.
+
+\begin{table}[H]
+\centering
+\small
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Setting & Mass (kg) & Object $\mu$ & Table $\mu$ & Object spin \\
+\midrule
+Easy target & 5.0 & 0.5 & 0.5 & 0.0 \\
+Hard target & $\mathcal{U}(5,10)$ & $\mathcal{U}(0.2,1.5)$ & $\mathcal{U}(0.2,1.5)$ & $\mathcal{U}(0,0.01)$ \\
+\bottomrule
+\end{tabular}
+}
+\caption{Target-domain evaluation settings used for the final success-rate comparison.}
+\label{tab:evaluation-settings}
+\end{table}
