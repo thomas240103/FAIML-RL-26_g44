@@ -79,7 +79,7 @@ class Agent(object):
     def __init__(self, policy, device='cpu'):
         self.train_device = device
         self.policy = policy.to(self.train_device)
-        self.optimizer = torch.optim.Adam(policy.parameters(), lr=1e-3)
+        self.optimizer = torch.optim.Adam(policy.parameters(), lr=3e-4)
 
         self.gamma = 0.99
         self.states = []
@@ -130,14 +130,13 @@ class Agent(object):
 
             next_values = next_values.detach()  #so when we do .backward gradients don't flow
 
-            #bootstrapped_returns = rewards + self.gamma * next_values * (1 - done)
-            discounted_rewards = discount_rewards(rewards, self.gamma)
-            advantage = discounted_rewards - state_values
-            #advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
+            bootstrapped_returns = rewards + self.gamma * next_values * (1 - done)
+            advantage = bootstrapped_returns - state_values
+            advantage = (advantage - advantage.mean()) / (advantage.std() + 1e-8)
 
             actor_loss = - (action_log_probs * advantage.detach()).mean()
-            critic_loss = F.mse_loss(state_values, discounted_rewards)
-            loss = actor_loss + critic_loss
+            critic_loss = F.mse_loss(state_values, bootstrapped_returns.detach())
+            loss = actor_loss + 0.5 * critic_loss
 
             self.optimizer.zero_grad()
             loss.backward()
