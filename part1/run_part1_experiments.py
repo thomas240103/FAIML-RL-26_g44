@@ -4,14 +4,14 @@ import sys
 
 
 EXPERIMENTS = [
-    {
-        "name": "reinforce_no_baseline",
-        "args": ["--alg", "reinforce"],
-    },
-    {
-        "name": "reinforce_baseline_20",
-        "args": ["--alg", "reinforce", "--baseline", "20"],
-    },
+#    {
+#        "name": "reinforce_no_baseline",
+#        "args": ["--alg", "reinforce"],
+#    },
+#    {
+#        "name": "reinforce_baseline_20",
+#        "args": ["--alg", "reinforce", "--baseline", "20"],
+#    },
     {
         "name": "actor_critic",
         "args": ["--alg", "actor-critic"],
@@ -22,10 +22,10 @@ EXPERIMENTS = [
 def parse_args():
     parser = argparse.ArgumentParser(description="Run all Part 1 Hopper experiments.")
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 42, 99], help="Seeds to run.")
-    parser.add_argument("--episodes", type=int, default=3000, help="Training episodes per run.")
+    parser.add_argument("--episodes", type=int, default=5000, help="Training episodes per run.")
     parser.add_argument("--eval-every", type=int, default=100, help="Evaluation frequency.")
-    parser.add_argument("--eval-episodes", type=int, default=5, help="Episodes per evaluation.")
-    parser.add_argument("--print-every", type=int, default=10, help="Training print frequency.")
+    parser.add_argument("--eval-episodes", type=int, default=10, help="Episodes per evaluation.")
+    parser.add_argument("--print-every", type=int, default=50, help="Training print frequency.")
     parser.add_argument("--plot", action="store_true", help="Generate comparison plots after training.")
     return parser.parse_args()
 
