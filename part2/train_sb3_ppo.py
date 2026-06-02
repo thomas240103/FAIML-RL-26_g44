@@ -5,12 +5,53 @@ import panda_gym  # type: ignore[import-not-found]
 from rand_wrapper import RandomizationWrapper
 from wrappers import RewardShapingWrapper
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecNormalize
-
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3 import PPO
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train PPO on PandaPush-v3")
+    parser.add_argument(
+        "--learning-rate",
+        type=float,
+        default=0.001,
+        help="learning rate of the optimizer"
+    )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=2048,
+    )
+    parser.add_argument(
+        "--steps",
+        type=int,
+        default=2048
+    )
+    parser.add_argument(
+        "--gamma",
+        type=float,
+        default=0.99
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=5,
+    )
+    parser.add_argument(
+        "--ent-coef",
+        type=float,
+        default=0.01
+    )
+    parser.add_argument(
+        "--gae-lambda",
+        type=float,
+        default=0.95
+    )
+    parser.add_argument(
+        "--clip-range",
+        type=float,
+        default=0.2
+    )
     parser.add_argument(
         "--sampling-strategy",
         type=str,
@@ -39,9 +80,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--save",
-        type=bool,
+        action="store_true",
         default=False,
-        choices=[True, False],
         help="Select if you want to save or not the model weights"
     )
     parser.add_argument(
@@ -63,7 +103,9 @@ def make_env(env_type: str, sampling_strategy: str, seed: int, rank: int):
             reward_type="dense",
         )
         env = RandomizationWrapper(env, mass_range=(1.0, 5.0), mode=sampling_strategy)
-        env = RewardShapingWrapper(env, bonus_distance=0.05, bonus=1.0, time_penalty=1e-2)
+        env = RewardShapingWrapper(env, bonus_distance=0.05, bonus=100.0, time_penalty=1e-2)
+        env = Monitor(env)
+
         env.reset(seed=seed + rank)
         return env
     return _init
@@ -86,11 +128,14 @@ def main() -> None:
     model = PPO(
         "MultiInputPolicy",
         env,
-        learning_rate=3e-4,
-        n_steps=2048,
-        gamma=0.99,
-        clip_range=0.2,
-        ent_coef=0.001,
+        learning_rate=args.learning_rate,
+        n_steps=args.steps,
+        gamma=args.gamma,
+        gae_lambda=args.gae_lambda,
+        clip_range=args.clip_range,
+        n_epochs=args.epochs,
+        batch_size=args.batch_size,
+        ent_coef=args.ent_coef,
         verbose=1,
         tensorboard_log="./ppo_logs/",
         seed=args.seed,

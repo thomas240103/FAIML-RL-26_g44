@@ -1,0 +1,82 @@
+\section{Experimental Results}
+\subsection{Part 1: Hopper}
+The Part 1 implementation produced learning-curve plots for REINFORCE without baseline, REINFORCE with a constant baseline of 20, and the actor-critic variant. The plots show that all three runs can eventually reach high returns, but the learning curves are noisy and single-seed only. The constant baseline improves the early REINFORCE curve relative to the no-baseline run, but it does not remove instability. The actor-critic run uses a learned value baseline and reaches high return near the end of training, although it also exhibits long low-return phases.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{p{0.34\linewidth}ccc}
+\toprule
+Method & Seed & Episodes & Final metric \\
+\midrule
+REINFORCE & 0 & 3000 & \TODO{eval} \\
+REINFORCE, $b=20$ & 0 & 3000 & \TODO{eval} \\
+Actor-critic & 0 & 3000 & \TODO{eval} \\
+\bottomrule
+\end{tabular}
+\caption{Part 1 runs currently available as plots in \texttt{part1/plots/}. The final report should fill this table with deterministic evaluation means and standard deviations, preferably over at least three seeds.}
+\label{tab:hopper-results}
+\end{table}
+
+\subsection{Part 2: Training Diagnostics}
+SAC was selected as the main Part 2 algorithm because the available logs show faster and more reliable success than PPO. The clearest SAC runs reach high training success after 500k steps. PPO logs are more variable: some runs remain near 0.15--0.19 success even after many updates, while one run reaches 0.87 around 2M steps. This is consistent with the expected advantage of off-policy SAC on goal-conditioned manipulation, especially when replay and optional HER are available.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Run & Step & Train SR \\
+\midrule
+SAC none source & 499700 & 0.97 \\
+SAC none target & 499933 & 1.00 \\
+SAC UDR source & 499988 & 0.99 \\
+SAC UDR + friction & 499957 & 0.96 \\
+Best logged PPO run & 2015232 & 0.87 \\
+\bottomrule
+\end{tabular}
+\caption{Final TensorBoard training success rates from available logs. These are training diagnostics, not a substitute for the deterministic evaluation table.}
+\label{tab:training-diagnostics}
+\end{table}
+
+\subsection{Nominal Sim-to-Sim Evaluation}
+Table~\ref{tab:nominal-eval} reports deterministic 50-episode evaluations generated from the saved SAC checkpoints. At the nominal target mass of 5 kg, the source-trained SAC policy already transfers well: the gap between source$\rightarrow$source and source$\rightarrow$target is small in success rate. The target-trained model is still the oracle upper bound.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llcccc}
+\toprule
+Model & Evaluation & Mean return & Std return & Success & Mass \\
+\midrule
+SAC none source & source & -1.536 & 7.574 & 98\% & 1 kg \\
+SAC none source & target & -2.316 & 9.578 & 96\% & 5 kg \\
+SAC none target & target & -0.429 & 0.274 & 100\% & 5 kg \\
+SAC UDR + friction source & source & -9.761 & 46.666 & 94\% & 1 kg \\
+SAC UDR + friction source & target & -6.509 & 26.756 & 94\% & 5 kg \\
+\bottomrule
+\end{tabular}
+\caption{Available 50-episode deterministic SAC evaluations with fixed nominal mass and fixed nominal friction, seed 42. The UDR checkpoint is the saved \texttt{SAC\_udr\_source\_500k\_friction} model.}
+\label{tab:nominal-eval}
+\end{table*}
+
+\subsection{Harder Mass and Friction Evaluation}
+Because nominal mass transfer was already strong, the evaluation was extended to randomize parameters at test time. Table~\ref{tab:hard-eval} uses mass sampled uniformly in $[5,10]$ kg, object/table lateral friction sampled in $[0.2,1.5]$, and object spinning friction sampled in $[0,0.01]$. Under this harder protocol, the non-randomized source policy drops from 96\% to 76\% success on target. The UDR policy trained with mass and friction randomization reaches 90\%, suggesting that UDR is more useful when the evaluation distribution is wider than the original source-target mass shift.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Model & Mean return & Std & Success \\
+\midrule
+SAC none source & -10.990 & 17.411 & 76\% \\
+SAC UDR + friction & -5.004 & 14.170 & 90\% \\
+\bottomrule
+\end{tabular}
+\caption{Hard target evaluation over 50 deterministic episodes, seed 42. The sampled masses had min 5.219 kg, mean 7.676 kg, and max 9.878 kg.}
+\label{tab:hard-eval}
+\end{table}
+
+\subsection{Missing Final Experiments}
+The following results are still required before the report can be considered final: PPO deterministic evaluation with valid normalization statistics, ADR source$\rightarrow$source and source$\rightarrow$target evaluation, multi-seed means and standard deviations, and the final Part 1 numeric table. \TODO{Run the mandatory final grid and replace the TODO cells before submission.}

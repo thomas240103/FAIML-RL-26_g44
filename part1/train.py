@@ -197,7 +197,7 @@ def main():
     if run_name is None:
         baseline_tag = f"_baseline_{args.baseline:g}" if args.alg == "reinforce" and args.baseline != 0 else ""
         run_name = f"{args.alg}{baseline_tag}_seed_{args.seed}"
-    plt.savefig(f'part1/{run_name}_learning_curve.png', dpi=150)
+    plt.savefig(f'part1/plots/{run_name}_learning_curve.png', dpi=150)
     if not args.no_show:
         plt.show()
     plt.close()

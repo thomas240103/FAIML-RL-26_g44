@@ -70,23 +70,23 @@ SAC_PROFILES: dict[int, dict] = {
 
 PPO_PROFILES: dict[int, dict] = {
     1: {  # PPO baseline: update piu' frequenti su reward dense source
-        "learning_rate":   [1e-4, 3e-4],
-        "gamma":           [0.98, 0.99],
+        "learning_rate":   [3e-4, 1e-3],
+        "gamma":           [0.95, 0.98],
         "ent_coef":        [0.001],
-        "n_steps":         [1024],
+        "n_steps":         [1024, 2048],
         "clip_range":      [0.2],
-        "gae_lambda":      [0.95],
-        "n_envs":          [8],
+        "gae_lambda":      [0.95, 0.9],
+        "n_envs":          [4],
         "sampling_strategy": ["none"],
     },
     2: {  # Rollout/update geometry: batch totale = n_envs * n_steps
-        "learning_rate":   [3e-4],
-        "gamma":           [0.98],
+        "learning_rate":   [3e-4, 1e-3],
+        "gamma":           [0.92, 0.90],
         "n_steps":         [512, 1024],
         "clip_range":      [0.1, 0.2],
-        "gae_lambda":      [0.9, 0.95],
+        "gae_lambda":      [0.95],
         "ent_coef":        [0.001],
-        "n_envs":          [8],
+        "n_envs":          [4],
         "sampling_strategy": ["none"],
     },
     3: {  # Domain randomization per transfer source->target

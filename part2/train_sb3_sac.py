@@ -98,6 +98,12 @@ def parse_args() -> argparse.Namespace:
         choices=["auto", "cpu", "cuda", "mps"],
         help="Device to use for training (mps for Apple Silicon)",
     )
+    parser.add_argument(
+        "--gamma",
+        type=float,
+        default=0.95,
+        help="Discount factor of the rewards"
+    )
     return parser.parse_args()
 
 
@@ -133,13 +139,14 @@ def main() -> None:
         buffer_size=args.buffer_size,
         tau=args.tau,
         train_freq=args.train_freq,
-        ent_coef="auto_0.1",
+        ent_coef="auto",
         verbose=1,
         tensorboard_log="./sac_logs/",
         seed=args.seed,
         device=args.device,
         replay_buffer_class=replay_buffer_class,
         replay_buffer_kwargs=replay_buffer_kwargs,
+        gamma=args.gamma
     )
     model.learn(total_timesteps=args.timesteps, log_interval=4)
     if args.save:
