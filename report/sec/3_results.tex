@@ -15,19 +15,19 @@ Table~\ref{tab:nominal-eval} reports deterministic 50-episode evaluations genera
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llcccc}
+\begin{tabular}{llccc}
 \toprule
 Model & Evaluation & Mean return & Std return & Success \\
 \midrule
-SAC source  & target (easy) & - & - & -\\
-SAC target  & target (easy) & - & - & - \\
-SAC source \textbf{(Lower Bound)} & target (hard) & - & - & - \\
+SAC source  & target (easy) & -1.740 & 7.917 & 97.3\%\\
+SAC target  & target (easy) & -0.608 & 2.237 & 99.3\% \\
+SAC source \textbf{(Lower Bound)} & target (hard) & -12.762 & 19.722 & 72.0\% \\
 SAC target \textbf{(Upper Bound)} & target (hard) & - & - & - \\
-SAC UDR + friction source & target (hard) & - & - & - \\
-SAC ADR + friction source & target (hard) & - & - & - \\
+SAC UDR + friction source & target (hard) & -4.814 & 14.555 & 90.7\% \\
+SAC ADR + friction source & target (hard) & -4.638 & 27.440 & 94.0\% \\
 \bottomrule
 \end{tabular}
-\caption{Available 50-episode deterministic SAC evaluations with fixed nominal mass and fixed nominal friction, seed 42. The UDR checkpoint is the saved \texttt{SAC\_udr\_source\_500k\_friction} model.}
+\caption{Deterministic SAC evaluations aggregated over 150 episodes, using 50 episodes for each seed in $\{0,42,99\}$. The hard target samples mass from $\mathcal{U}(5,10)$ kg, object/table lateral friction from $\mathcal{U}(0.2,1.5)$, and object spinning friction from $\mathcal{U}(0,0.01)$. The hard target upper-bound checkpoint is not available yet.}
 \label{tab:nominal-eval}
 \end{table*}
 
