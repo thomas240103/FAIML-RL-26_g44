@@ -1,6 +1,6 @@
 conda activate rl_env
 
-tensorboard --logdir /Users/luciobaiocchi/projects/FAIML-RL-26_g44/part2/tb_logs/
+tensorboard --logdir /Users/luciobaiocchi/projects/FAIML-RL-26_g44/part2/tb_logs/ --bind_all
 
 
 # SAC + HER
@@ -49,3 +49,30 @@ python train_sb3.py \
 
 Il modello generato da questo comando sta qui: models/SAC_none_source_500k/model.zip
 e il log del training è questo: tb_logs/SAC_none_source_500k_2
+
+
+
+python part2/train_sb3.py \
+--algorithm sac \
+--env-type target \
+--sampling-strategy udr \
+--timesteps 500000 \
+--learning-rate 0.001 \
+--batch-size 2048 \
+--gradient-steps -1 \
+--learning-starts 100000 \
+--buffer-size 1000000 \
+--tau 0.05 \
+--gamma 0.95 \
+--seed 42 \
+--mass-min 5.0 \
+--mass-max 10.0 \
+--object-lateral-friction-min 0.2 \
+--object-lateral-friction-max 1.5 \
+--table-lateral-friction-min 0.2 \
+--table-lateral-friction-max 1.5 \
+--object-spinning-friction-min 0.0 \
+--object-spinning-friction-max 0.01 \
+--run-name SAC_udr_hard_target_500k \
+--device cuda \
+--save

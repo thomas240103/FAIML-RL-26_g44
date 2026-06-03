@@ -49,5 +49,49 @@ SAC UDR + friction & -5.004 & 14.170 & 90\% \\
 \label{tab:hard-eval}
 \end{table}
 
+\subsection{UDR Hard Target vs.\ ADR Curriculum}
+
+An additional experiment was run to test whether training UDR directly on the target-domain intervals could outperform the ADR curriculum that starts from the source domain.
+The \emph{UDR hard target} model was trained with mass sampled from $\mathcal{U}(5,10)$~kg and lateral friction from $\mathcal{U}(0.2,1.5)$, matching the hard evaluation distribution exactly.
+Intuitively, this should be the best possible UDR baseline: training and evaluation distributions coincide, so no sim-to-sim gap exists.
+
+Table~\ref{tab:udr-vs-adr} reports 50-episode deterministic evaluations under the hard target protocol for this model alongside the ADR source model.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lccc}
+\toprule
+Model & Mean return & Std & Success \\
+\midrule
+SAC UDR hard target & $-12.977$ & $21.476$ & 72\% \\
+SAC ADR source      & $-2.639$  & $7.038$  & 94\% \\
+\bottomrule
+\end{tabular}
+\caption{Hard target evaluation (50 episodes, seed 42). The UDR hard target model was trained with mass $\mathcal{U}(5,10)$~kg and friction $\mathcal{U}(0.2,1.5)$, identical to the evaluation distribution. ADR was trained starting from the source domain with an adaptive curriculum.}
+\label{tab:udr-vs-adr}
+\end{table}
+
+Despite seeing the same distribution during training and evaluation, the UDR hard target model performs significantly worse.
+The failure pattern reveals a friction sensitivity: the UDR policy handles low object lateral friction $\mu_\mathrm{obj}\in[0.2,0.5)$ with 100\% success, but its success rate collapses to 55--73\% for medium and high friction values (Table~\ref{tab:udr-friction-bins}).
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+Object lateral $\mu$ bin & Success (UDR hard) & Success (ADR) \\
+\midrule
+$[0.21,\,0.46)$ & 100\% & $\approx$100\% \\
+$[0.46,\,0.72)$ & 73\%  & $\approx$100\% \\
+$[0.72,\,0.97)$ & 55\%  & $\approx$91\%  \\
+$[0.97,\,1.22)$ & 71\%  & $\approx$90\%  \\
+$[1.22,\,1.48]$ & 64\%  & $\approx$86\%  \\
+\bottomrule
+\end{tabular}
+\caption{Per-friction-bin success rates on the hard target evaluation for the UDR hard target model and the ADR source model (ADR bins are approximate, from the same-seed evaluation).}
+\label{tab:udr-friction-bins}
+\end{table}
+
 \subsection{Missing Final Experiments}
 The following results are still required before the report can be considered final: PPO deterministic evaluation with valid normalization statistics, ADR source$\rightarrow$source and source$\rightarrow$target evaluation, multi-seed means and standard deviations, and the final Part 1 numeric table. \TODO{Run the mandatory final grid and replace the TODO cells before submission.}
