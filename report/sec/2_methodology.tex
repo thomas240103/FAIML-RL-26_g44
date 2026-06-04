@@ -88,7 +88,9 @@ and object spinning friction is sampled from $\mathcal{U}(0,0.005)$.
 In \texttt{adr}, the wrapper starts from the nominal mass and friction and adapts the sampling ranges using a window of 20 episode outcomes. If the mean success rate is at least 0.70, the mass upper bound expands toward 5 kg and the friction ranges widen toward their global limits. If the mean success rate is at most 0.35, the ranges contract back toward the nominal values. With the default step size, the mass range expands by 1 kg per successful update, while lateral-friction ranges expand by 0.175 per update.
 
 \paragraph{Evaluation Protocol.}
-Each model is evaluated with deterministic actions for 50 episodes, using seeds 0, 42, and 99. The main metric is the final success rate, computed from \texttt{info["is\_success"]} at the end of each episode. We use two target settings: an easy fixed target with the nominal target mass, and a hard target where mass and friction are randomized at test time.
+Each model is evaluated with deterministic actions for 50 episodes, using seeds 0, 42, and 99. The main metric is the final success rate, computed from \texttt{info["is\_success"]} at the end of each episode. We use two target settings: an easy fixed target with the nominal target mass, and a hard target where mass and friction are randomized at test time,
+from a uniform distribution. We took this direction in order to test the model in various and unknow settings. This was done to achieve a single policy capable of generalizing 
+different materials (both for the surface and the object itself) as well as different mass.
 
 \begin{table}[H]
 \centering

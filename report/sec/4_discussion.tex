@@ -8,7 +8,7 @@ SAC appears more suitable than PPO for this repository state. The available logs
 
 \subsection{Why ADR Outperforms UDR Trained on the Target Distribution}
 
-The most counter-intuitive result is that the ADR source model (94\%) outperforms the UDR hard target model (72\%) despite the latter being trained on a distribution that exactly matches the evaluation distribution.
+The most counter-intuitive result is that the ADR source model (94.0\%) outperforms the UDR hard target model (85.3\%) despite the latter being trained on a distribution that exactly matches the evaluation distribution.
 A natural first hypothesis is that certain mass--friction combinations are physically beyond the arm's capability: the Panda joints have limited torques (87~N on most joints), and pushing a 10~kg object against high friction may be infeasible regardless of the policy.
 However, this hypothesis does not explain the gap, because both models face the same hard cases during evaluation.
 If some physics configurations were impossible, the ADR model would fail on them too, and the success rates would converge.
