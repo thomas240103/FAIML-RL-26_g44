@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Homebrew) (preloaded format=pdflatex 2026.3.4)  4 JUN 2026 16:29
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026/Homebrew) (preloaded format=pdflatex 2026.3.4)  6 JUN 2026 16:36
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -429,38 +429,40 @@ LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 72
  (/opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )) (./sec/3_results.tex [2]
-<../part1/plots/comparison_train_mean_std.png, id=128, 722.7pt x 433.62pt>
+<../part1/plots/comparison_train_mean_std.png, id=140, 722.7pt x 433.62pt>
 File: ../part1/plots/comparison_train_mean_std.png Graphic file (type png)
 <use ../part1/plots/comparison_train_mean_std.png>
 Package pdftex.def Info: ../part1/plots/comparison_train_mean_std.png  used on input line 7.
 (pdftex.def)             Requested size: 237.13594pt x 142.2812pt.
-) (./sec/4_discussion.tex [3 <../part1/plots/comparison_train_mean_std.png>] [4]) (./sec/5_conclusion.tex) (./main.bbl (./main.brf)
+) (./sec/4_discussion.tex [3 <../part1/plots/comparison_train_mean_std.png>] [4]) (./sec/5_conclusion.tex) (./sec/6_acknowledgment.tex) (./main.bbl (./main.brf)
 \tf@brf=\write4
 \openout4 = `main.brf'.
 
-) [5] (./main.aux)
+ [5]) [6
+
+] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: E7B2A5B73142E2F99CC9BD3BD01369EA;2615.
+(rerunfilecheck)             Checksum: 856BF517B4FC8CBF0B3CACA7420677A1;3068.
 Package rerunfilecheck Info: File `main.brf' has not changed.
 (rerunfilecheck)             Checksum: 097BECBDD195F4F30BC862BC0A806047;507.
  ) 
 Here is how much of TeX's memory you used:
- 14955 strings out of 467525
- 250312 string characters out of 5408440
+ 14968 strings out of 467525
+ 250561 string characters out of 5408440
  718852 words of memory out of 5000000
- 43590 multiletter control sequences out of 15000+600000
+ 43596 multiletter control sequences out of 15000+600000
  657204 words of font info for 107 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 90i,11n,98p,879b,468s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 90i,11n,98p,879b,627s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi9.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy6.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy9.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/urw/courier/ucrro8a.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (5 pages, 449743 bytes).
+Output written on main.pdf (6 pages, 451677 bytes).
 PDF statistics:
- 253 PDF objects out of 1000 (max. 8388607)
- 205 compressed objects within 3 object streams
- 50 named destinations out of 1000 (max. 500000)
- 126 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 269 PDF objects out of 1000 (max. 8388607)
+ 220 compressed objects within 3 object streams
+ 54 named destinations out of 1000 (max. 500000)
+ 150 words of extra memory for PDF output out of 10000 (max. 10000000)
 

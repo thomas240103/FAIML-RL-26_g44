@@ -1,15 +1,15 @@
 # Fdb version 4
-["bibtex main"] 1780583107.71262 "main.aux" "main.bbl" "main" 1780583371.9519 0
+["bibtex main"] 1780756331.42361 "main.aux" "main.bbl" "main" 1780756594.78445 0
   "./ieeenat_fullname.bst" 1780058683.7382 26900 a296cb1ebee73f7bfa143751dc4e1dfd ""
   "./main.bib" 1780060024.99124 3517 f77483292d0be8de58f62929161e0d2f ""
-  "main.aux" 1780583371.79564 9249 a268a6b39b5970e2f8df1b7e2b80c5cc "pdflatex"
+  "main.aux" 1780756594.63692 9654 aa3cce6d9510fdd9b37b90ae0b8d3ef1 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1780583371.22499 "/Users/leonardo/Polito/FAIMDL/FAIML-RL-26_g44/report/main.tex" "main.pdf" "main" 1780583371.95204 0
+["pdflatex"] 1780756594.12003 "/Users/leonardo/Polito/FAIMDL/FAIML-RL-26_g44/report/main.tex" "main.pdf" "main" 1780756594.78457 0
   "../part1/plots/comparison_train_mean_std.png" 1780325154.96796 278428 83600de0f040a41f482938d2c6cafb25 ""
-  "/Users/leonardo/Polito/FAIMDL/FAIML-RL-26_g44/report/main.tex" 1780410153.26654 2174 efb6eb50dc146cddb374ab0a0cf54524 ""
+  "/Users/leonardo/Polito/FAIMDL/FAIML-RL-26_g44/report/main.tex" 1780753694.7392 2207 850e404308ee4e3dfbf2af50d51ffa2c ""
   "/opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/enc/dvips/base/8r.enc" 1772380719 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/map/fontname/texfonts.map" 1772380719 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/fonts/map/pdftex/updmap/pdftex.map" 1772380719 5541360 f183aac233c4cd1e5ef882fcbe8e7096 ""
@@ -147,18 +147,19 @@
   "/opt/homebrew/Cellar/texlive/20260301/share/texmf-dist/web2c/texmf.cnf" 1772380719 43633 14bbc273cebd985e64ab1a698333eaf9 ""
   "/opt/homebrew/Cellar/texlive/20260301/share/texmf-var/web2c/pdftex/pdflatex.fmt" 1772380719 3636958 d2062700e4b629ba1467c28603bfdc8d ""
   "cvpr.sty" 1780058683.73744 17969 3445318c9c9e09b8ef62b6aaa240cbba ""
-  "main.aux" 1780583371.79564 9249 a268a6b39b5970e2f8df1b7e2b80c5cc "pdflatex"
-  "main.bbl" 1780583107.7791 3652 aec64789534d01baa1e7d8b156a7e61d "bibtex main"
-  "main.brf" 1780583371.79652 507 097becbdd195f4f30bc862bc0a806047 "pdflatex"
-  "main.out" 1780583371.79642 2615 e7b2a5b73142e2f99cc9bd3bd01369ea "pdflatex"
-  "main.tex" 1780410153.26654 2174 efb6eb50dc146cddb374ab0a0cf54524 ""
+  "main.aux" 1780756594.63692 9654 aa3cce6d9510fdd9b37b90ae0b8d3ef1 "pdflatex"
+  "main.bbl" 1780756331.49761 3652 aec64789534d01baa1e7d8b156a7e61d "bibtex main"
+  "main.brf" 1780756594.63785 507 097becbdd195f4f30bc862bc0a806047 "pdflatex"
+  "main.out" 1780756594.63774 3068 856bf517b4fc8cbf0b3caca7420677a1 "pdflatex"
+  "main.tex" 1780753694.7392 2207 850e404308ee4e3dfbf2af50d51ffa2c ""
   "preamble.tex" 1780060170.82426 1400 67150b238cf1989568614a05229e39e9 ""
   "sec/0_abstract.tex" 1780392584.30549 1068 36c0443073144d6a34239f9380f3c33d ""
   "sec/1_intro.tex" 1780392855.20056 2117 1d64f44b32f059fd43e298317f73a566 ""
   "sec/2_methodology.tex" 1780581664.85309 6142 c9638d975ac6ff47b799ed7b62cf7a12 ""
   "sec/3_results.tex" 1780583371.0246 5428 0bbac4904071b03ae93a76f15e32568b ""
-  "sec/4_discussion.tex" 1780582324.26664 6807 8cc4083c2fe2d062ffaf1d36ea23c9dd ""
+  "sec/4_discussion.tex" 1780753130.17299 6486 40bb7910b8f1d6312de806001cd61c76 ""
   "sec/5_conclusion.tex" 1780059994.53419 745 a69d30c03385c605c776a9450e90804f ""
+  "sec/6_acknowledgment.tex" 1780756593.92668 1152 02b1c74f3d3c0b158c5ba9f59faff9d1 ""
   (generated)
   "main.aux"
   "main.brf"

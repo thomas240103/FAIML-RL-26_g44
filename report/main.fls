@@ -286,6 +286,9 @@ INPUT ./sec/5_conclusion.tex
 INPUT ./sec/5_conclusion.tex
 INPUT ./sec/5_conclusion.tex
 INPUT sec/5_conclusion.tex
+INPUT ./sec/6_acknowledgment.tex
+INPUT ./sec/6_acknowledgment.tex
+INPUT sec/6_acknowledgment.tex
 INPUT ./main.bbl
 INPUT ./main.bbl
 INPUT main.bbl
