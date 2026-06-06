@@ -1,16 +1,15 @@
 \section{Discussion}
 \subsection{Result Analysis}
-The most important observation is that the nominal source$\rightarrow$target transfer is easier than expected from mass alone. A source-trained SAC policy reaches 96\% success on the 5 kg target object, only slightly below its 98\% source success. This suggests that the current \texttt{PandaPush-v3} setup is not very sensitive to the fixed 1 kg to 5 kg mass shift. The task has a fixed goal, a short object-goal distance distribution, dense rewards during training, and a powerful continuous-control algorithm. These factors can hide part of the intended reality gap.
-
-The harder randomized evaluation is therefore more informative. When target mass is sampled in $[5,10]$ kg and friction is randomized, the non-randomized SAC policy falls to 76\% success. This indicates that friction and heavier masses expose failures that are not visible in the nominal target evaluation. The UDR policy trained with mass and friction randomization performs worse than the nominal SAC policy on the easy fixed evaluation, but better on the hard evaluation. This is the expected robustness trade-off: UDR may sacrifice performance on the nominal dynamics in exchange for a policy that is less specialized.
-
-SAC appears more suitable than PPO for this repository state. The available logs show high SAC training success after 500k steps, while PPO runs are less consistent and require careful treatment of vector normalization. This is coherent with the algorithms: SAC is off-policy and can reuse data through its replay buffer, whereas PPO is on-policy and discards rollouts after each update. For goal-conditioned pushing, replay-based learning is especially useful because informative transitions can be reused many times.
+The most important observation is that the nominal source to target transfer is easier than expected from mass alone. A source-trained SAC policy reaches 97.3\% success on the 5 kg target object, only slightly below its 99.3\% source success. This suggests that the current \texttt{PandaPush-v3} setup is not negatively influenced by the fixed 1  to 5 kg mass shift. The task has a fixed goal, a short object-goal distance distribution, dense rewards during training, and a powerful continuous-control algorithm. These factors can hide part of the intended reality gap.
+The harder setting was introduced to obtain results that are more meaningful and applicable to real-world scenarios
+When target mass is sampled in $[5,10]$ kg and friction is randomized, the non-randomized SAC policy falls to 72.0\% success. This indicates that friction and heavier masses expose failures that are not visible in the nominal target evaluation.
+Observing the result of the training, SAC has better performance compared to PPO.The experiments show that SAC achieves training success after 500k steps, while PPO runs are less consistent. This is coherent with the algorithms: SAC is off-policy and can reuse data through its replay buffer, whereas PPO is on-policy and discards rollouts after each update. For goal-conditioned pushing, replay-based learning is especially useful because informative transitions can be reused many times.
 
 \subsection{Why ADR Outperforms UDR Trained on the Target Distribution}
 
 The most counter-intuitive result is that the ADR source model (94.0\%) outperforms the UDR hard target model (85.3\%) despite the latter being trained on a distribution that exactly matches the evaluation distribution.
-A natural first hypothesis is that certain mass--friction combinations are physically beyond the arm's capability: the Panda joints have limited torques (87~N on most joints), and pushing a 10~kg object against high friction may be infeasible regardless of the policy.
-However, this hypothesis does not explain the gap, because both models face the same hard cases during evaluation.
+A natural first hypothesis is that certain combinations of mass and friction are physically beyond the arm's capability: the Panda joints have limited torques (87~N on most joints), and pushing a 10~kg object against high friction may be infeasible regardless of the policy.
+Where is the gap coming from if both models are trained in the same environment?
 If some physics configurations were impossible, the ADR model would fail on them too, and the success rates would converge.
 Since ADR reaches 94\%, the arm is capable of solving nearly all the sampled configurations; the UDR model simply has not learned how.
 
