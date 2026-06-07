@@ -27,6 +27,17 @@ which is normalized over the collected episode before computing the policy-gradi
 \subsection{Part 2: PandaPush Pipeline}
 The second part uses the \texttt{panda-gym} environment. The source object mass is $1.0$ kg, while evaluation is performed on two target settings described in the evaluation protocol. The goal position is fixed at the center of the table, while the object initial position is randomized in the $xy$ plane. The training scripts use the dense task reward and an episode horizon of 500 steps.
 
+\paragraph{Algorithms.}
+For Part 2 we rely on the Stable-Baselines3 implementations of two state-of-the-art actor-critic algorithms. PPO~\cite{schulman2017ppo} is an \textbf{on-policy} method that collects rollouts under the current policy and updates it by maximizing a clipped surrogate objective,
+\begin{equation}
+\mathcal{L}^{\mathrm{CLIP}}(\theta) = \mathbb{E}_t\!\left[\min\!\big(\rho_t A_t,\ \mathrm{clip}(\rho_t, 1-\epsilon, 1+\epsilon)\, A_t\big)\right],
+\end{equation}
+where $\rho_t = \pi_\theta(a_t|s_t)/\pi_{\theta_{\mathrm{old}}}(a_t|s_t)$ is the probability ratio, $A_t$ is a GAE advantage estimate, and the clip range $\epsilon$ bounds the policy update. SAC~\cite{haarnoja2018sac} is an \textbf{off-policy} maximum-entropy method that reuses past transitions from a replay buffer and optimizes the entropy-regularized objective
+\begin{equation}
+J(\pi) = \mathbb{E}\!\left[\sum_t r_t + \alpha\, \mathcal{H}\big(\pi(\cdot|s_t)\big)\right],
+\end{equation}
+where $\mathcal{H}$ is the policy entropy and the temperature $\alpha$ (tuned automatically) trades off reward and exploration. Because the manipulation observation is a dictionary (achieved goal, desired goal, and state), both algorithms use the \texttt{MultiInputPolicy}.
+
 \paragraph{Training Setting}
 
 The training was performed trying different hyperparameters, and then choosing 
