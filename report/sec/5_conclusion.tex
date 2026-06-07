@@ -1,2 +1,8 @@
-\section{Conclusion}
-This project implemented the full path from basic policy-gradient methods on Hopper to sim-to-sim transfer experiments on PandaPush. In the current repository state, SAC is the strongest and most reliable Part 2 algorithm. At the nominal 5 kg target mass, the source-trained SAC policy already transfers well, reaching 96\% success over 50 deterministic episodes, while the target-trained oracle reaches 100\%. A harder mass-and-friction evaluation reveals a clearer reality gap: the non-randomized source policy drops to 76\% success, while the UDR policy trained with mass and friction randomization reaches 90\%. The final conclusions still require PPO, ADR, multi-seed, and Part 1 numerical evaluations to be completed.
+  \section{Conclusion}
+
+  This project implemented policy-gradient methods on Hopper and Stable-Baselines3 policies for sim-to-sim transfer on PandaPush. In Part 1, the REINFORCE variant with a constant baseline gave the strongest training curve among the implemented methods, while the actor-
+  critic version required more tuning. In Part 2, SAC was the most reliable algorithm, and the nominal source-to-target transfer was easier than expected, reaching 97.3\% success on the target domain.
+
+  The harder randomized evaluation showed a clearer reality gap: the non-randomized source policy dropped to 72.0\% success when mass and friction were randomized. Domain randomization improved robustness, with UDR reaching 90.7\% and ADR achieving the best result at
+  94.0\%. The main lesson is that curriculum-based randomization can be more data-efficient than exposing the policy to the full hard distribution from the beginning. The main limitation is that each policy was trained only once; future work should use multiple training
+  seeds and test a wider set of simulator parameters.
