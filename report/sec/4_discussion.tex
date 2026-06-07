@@ -5,28 +5,14 @@ The harder setting was introduced to obtain results that are more meaningful and
 When target mass is sampled in $[5,10]$ kg and friction is randomized, the non-randomized SAC policy falls to 72.0\% success. This indicates that friction and heavier masses expose failures that are not visible in the nominal target evaluation.
 Observing the result of the training, SAC has better performance compared to PPO.The experiments show that SAC achieves training success after 500k steps, while PPO runs are less consistent. This is coherent with the algorithms: SAC is off-policy and can reuse data through its replay buffer, whereas PPO is on-policy and discards rollouts after each update. For goal-conditioned pushing, replay-based learning is especially useful because informative transitions can be reused many times.
 
-\subsection{Why ADR Outperforms UDR Trained on the Target Distribution}
+\subsection{Analysis of  ADR and UDR}
+As discussed in the previous sections, after introducing the hard target setting, we bench marked it to estimate an approximate upper-bound performance. Among the different training experiments, the best-performing configuration achieved a success rate of $85.3\%$.
+Initially, this non perfect result appeared to be a direct consequence of the increased difficulty of the task. However, after training a UDR and ADR model on the source domain, the results showed that the source-trained policy outperformed the   directly trained on the hard target distribution.
 
-The most counter-intuitive result is that the ADR source model (94.0\%) outperforms the UDR hard target model (85.3\%) despite the latter being trained on a distribution that exactly matches the evaluation distribution.
-A natural first hypothesis is that certain combinations of mass and friction are physically beyond the arm's capability: the Panda joints have limited torques (87~N on most joints), and pushing a 10~kg object against high friction may be infeasible regardless of the policy.
-Where is the gap coming from if both models are trained in the same environment?
-If some physics configurations were impossible, the ADR model would fail on them too, and the success rates would converge.
-Since ADR reaches 94\%, the arm is capable of solving nearly all the sampled configurations; the UDR model simply has not learned how.
-
-The more likely explanation is a curriculum effect.
-UDR exposes the policy to the full difficulty range from the very first episode of training.
-With only 500k steps and 100k warm-up steps in the replay buffer, the policy has roughly 400k gradient updates to learn a single robust strategy covering the entire $[5,10]$~kg $\times\,[0.2,1.5]$ friction space simultaneously.
-The per-friction-bin breakdown (Table~\ref{tab:udr-friction-bins}) shows that the UDR policy performs well at the lowest friction values and degrades at higher ones, but the mass bins do not follow a clean monotonic pattern (success is non-monotonic across the $[5,10]$~kg range).
-With only 50 evaluation episodes, the per-bin sample counts are too small (6--13 episodes) to conclude that the policy systematically biased toward any particular region of the parameter space.
-The most robust conclusion is that the UDR policy shows high variance and inconsistent generalization across the joint mass--friction space, consistent with insufficient training under a wide uniform distribution.
-
-ADR avoids this failure mode by construction.
-Starting from the nominal source dynamics, the curriculum expands the training range only when the current policy achieves a success rate above 70\%.
-The policy is therefore never overwhelmed: it first masters easy pushes, then incrementally adapts to heavier and more friction-variable objects.
-By the time the curriculum reaches the hard end of the range, the policy already has a strong behavioral prior that it refines rather than learns from scratch.
-
-This result suggests that, under a fixed compute budget, a well-designed curriculum is more data-efficient than training on the target distribution directly.
-It also motivates exploring ADR with friction as a first-class curriculum axis rather than expanding mass and friction simultaneously from a single success signal.
+A natural first hypothesis is that certain combinations of mass and friction are physically beyond the arm's capability. Panda joints have limited torques (87~N on most joints), and pushing a 10~kg object against high friction may be infeasible regardless of the policy As a consequence during hard target training there could be some combination , that lead to a slower and less stable convergence.
+A second possible explanation is that the UDR trained in source has a set of simpler samples with lower mass values and a narrower friction range. This leads to a faster and more stable convergence. Therefore, among the two UDR models, the source-trained UDR policy appears to be the better-performing one.
+More over when analizing ADR it's observable a significant growth in stability and speed. this is the conseguence of the training that expands the range only when the current policy achieves a success rate above 70\%.
+As a result, the policy is never overwhelmed by the full difficulty of the target distribution from the beginning. It first masters easier pushing tasks and then incrementally adapts to heavier objects and more variable friction conditions. By the time the model reaches the harder end of the range, the policy has already acquired a strong behavioral prior, which it can refine instead of learning a robust strategy from scratch.
 
 \subsection{Reward Shaping}
 The reward-shaping wrapper affects training but not the evaluation success metric. The time penalty encourages short solutions, and the close-goal bonus increases the learning signal once the object reaches the success threshold. For SAC, this can increase success rate indirectly by making successful behavior easier to learn early in training. However, it also makes training return less comparable to raw evaluation return. This is why the evaluation script reports both return and success rate on the unwrapped environment.
