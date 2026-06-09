@@ -51,20 +51,22 @@ the ones that best performed. Table~\ref{tab:training-hyperparameters} reports t
 \toprule
 Hyperparameter & SAC & PPO \\
 \midrule
-Training steps & 500k & 500k \\
-Policy & \texttt{MultiInputPolicy} & \texttt{MultiInputPolicy} \\
-Learning rate & $10^{-3}$, $3e^{-4}$, $10^{-4}$ & $10^{-3}$, $3e^{-4}$, $10^{-4}$ \\
-Discount $\gamma$ & 0.95, 0.98, 0.99 & 0.95, 0.98, 0.99 \\
-Batch size & 512, 1024, 2048 & 512, 1024, 2048 \\
-Gradient steps / epochs & -1 & 5 \\
-Rollout steps & -- & 2048 \\
-Learning starts & 100k & -- \\
-Replay buffer size & $10^6$ & -- \\
-Target update $\tau$ & 0.05 & -- \\
-Entropy coefficient & auto & 0.01 \\
-GAE $\lambda$ & -- & 0.95 \\
-Clip range & -- & 0.2 \\
-Policy network & default SB3 & [512, 256, 128] \\
+Environment & \textbf{source} & source \\
+Sampling strategy & \textbf{\texttt{none}} & \textbf{\texttt{none}} \\
+Training steps & \textbf{500k} & \textbf{500k} \\
+Policy & \textbf{\texttt{MultiInputPolicy}} & \textbf{\texttt{MultiInputPolicy}} \\
+Learning rate & \textbf{0.001}, $3e^{-4}$, $10^{-4}$ & $10^{-3}$, \textbf{2e-4}, $3e^{-4}$, $10^{-4}$ \\
+Discount $\gamma$ & \textbf{0.95}, 0.98, 0.99 & \textbf{0.95}, 0.98, 0.99 \\
+Batch size & 512, 1024, \textbf{2048} & \textbf{64} \\
+Gradient steps / epochs & \textbf{-1} & \textbf{10} \\
+Rollout steps & -- & \textbf{2048} \\
+Learning starts & \textbf{100k} & -- \\
+Replay buffer size & \textbf{10$^6$} & -- \\
+Target update $\tau$ & \textbf{0.05} & -- \\
+Entropy coefficient & \textbf{auto} & \textbf{0.0} \\
+GAE $\lambda$ & -- & \textbf{0.95} \\
+Clip range & -- & \textbf{0.2} \\
+Policy network & \textbf{default SB3} & \textbf{[256, 256]} \\
 \bottomrule
 \end{tabular}
 }
@@ -90,7 +92,7 @@ Reward shaping was added on top of the dense environment reward to encourage fas
 Evaluation uses the environment reward directly, so success rate is not computed from the shaped reward.
 
 \paragraph{Domain Randomization.}
-The wrapper \texttt{part2/rand\_wrapper.py} implements three modes. In \texttt{none}, the nominal environment dynamics are kept. In \texttt{udr}, the wrapper samples a new mass and friction values at every reset. The current UDR training ranges are:
+The wrapper \texttt{part2/rand\_wrapper.py} implements three modes. In \texttt{none}, the nominal environment dynamics are kept. In \texttt{udr}, the wrapper samples a new mass and friction values at every reset. The UDR training ranges are:
 \begin{equation}
 m \sim \mathcal{U}(1,5), \quad
 \mu_{\mathrm{obj}},\mu_{\mathrm{table}} \sim \mathcal{U}(0.5,1.2),

@@ -11,7 +11,14 @@ Figure~\ref{fig:part1-train-comparison} compares REINFORCE without baseline, REI
 
 \subsection{Part 2: PandaPush-v3}
 For the second part of the project both PPO and SAC models were trained, however since the training of PPO was more unstable and it does not 
-converge, only SAC was kept for further implemantations and evaluations. 
+converge, only SAC was kept for further implemantations and evaluations.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{../part2/plots/ppo_sac_success_rate.png}
+\caption{Training success-rate comparison on the source-domain \texttt{PandaPush-v3} task without domain randomization. The PPO curve corresponds to \texttt{PPO\_none\_source\_500k\_lr2e-4\_g095\_1}, while the SAC curve corresponds to \texttt{SAC\_none\_source\_500k\_2}.}
+\label{fig:ppo-sac-success-rate}
+\end{figure}
 
 \subsection{Nominal Sim-to-Sim Evaluation}
 The first section of table~\ref{tab:nominal-eval} reports aggregated 150-episodes evaluations (50 episodes per seed) generated from the saved SAC checkpoints. 

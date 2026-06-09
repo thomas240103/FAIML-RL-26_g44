@@ -24,12 +24,16 @@ The reward-shaping wrapper affects training but not the evaluation success metri
 
 \subsection{Methodological Critique}
 
-  The main limitation of the experimental setup is that the reported evaluations are averaged over three evaluation seeds, but each policy comes from a single training run. Therefore, the results are more reliable than a single 50-episode evaluation, but they do not
-  capture the variance due to different training seeds. Stronger conclusions would require training each configuration multiple times.
+The main limitation of the experimental setup is that the reported evaluations are averaged over three evaluation seeds, but each policy comes from a single training run. Therefore, the results are more reliable than a single 50-episode evaluation, but they do not
+capture the variance due to different training seeds. Stronger conclusions would require training each configuration multiple times.
 
-  A second limitation is that both UDR and ADR depend strongly on the chosen randomization ranges and hyperparameters. If the UDR range is too wide, learning can become unstable or inefficient; if it is too narrow, the policy may not become robust enough. Similarly, ADR
-  depends on the success threshold and expansion rule used for the curriculum.
+A second limitation is that both UDR and ADR depend strongly on the chosen randomization ranges and hyperparameters. If the UDR range is too wide, learning can become unstable or inefficient; if it is too narrow, the policy may not become robust enough. Similarly, ADR
+depends on the success threshold and expansion rule used for the curriculum.
+In particular, the ADR step is relatively coarse. Although this worked well empirically, a smaller step could
+provide a smoother curriculum and reduce sensitivity to transient success-rate
+estimates.
 
-  Finally, this project studies transfer in a simplified sim-to-sim setting. Although changing mass and friction exposes a meaningful reality gap, it does not include all sources of mismatch that appear in real robotics, such as sensor noise, actuator delays, inaccurate
-  contacts, or calibration errors. For this reason, the results should be interpreted as evidence that domain randomization improves robustness in simulation, not as a guarantee of real-world transfer.
+
+Finally, this project studies transfer in a simplified sim-to-sim setting. Although changing mass and friction exposes a meaningful reality gap, it does not include all sources of mismatch that appear in real robotics, such as sensor noise, actuator delays, inaccurate
+contacts, or calibration errors. For this reason, the results should be interpreted as evidence that domain randomization improves robustness in simulation, not as a guarantee of real-world transfer.
 

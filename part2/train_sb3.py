@@ -246,7 +246,7 @@ def train_ppo(args: argparse.Namespace) -> None:
         save_dir = Path("models") / (args.run_name or tb_name)
         save_dir.mkdir(parents=True, exist_ok=True)
         model.save(save_dir / "model")
-        env.save(save_dir / "vecnorm.pkl")
+        #env.save(save_dir / "vecnorm.pkl")
         print(f"Modello salvato: {save_dir}/model.zip")
 
 
