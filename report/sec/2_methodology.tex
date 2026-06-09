@@ -2,7 +2,7 @@
 \subsection{Part 1: Policy Gradients on Hopper}
 The first part uses \texttt{Hopper-v4}, a continuous-control MuJoCo task. The action is continuous and the policy is stochastic. In \texttt{part1/agent.py}, the policy network is a two-hidden-layer MLP with 64 units per layer and \texttt{tanh} activations. The actor outputs the mean of a diagonal Gaussian distribution; the standard deviation is a learned parameter passed through \texttt{softplus}. All Part 1 experiments use Adam with learning rate $3 \times 10^{-4}$ and discount factor $\gamma=0.99$.
 
-\paragraph{REINFORCE.}
+\paragraph{REINFORCE}
 For an episode trajectory, the implementation computes Monte-Carlo returns
 \begin{equation}
 G_t = \sum_{k=t}^{T} \gamma^{k-t} r_k ,
@@ -25,10 +25,10 @@ A_t = y_t - V_\phi(s_t),
 which is normalized over the collected episode before computing the policy-gradient loss. 
 
 \subsection{Part 2: PandaPush Pipeline}
-The second part uses the \texttt{panda-gym} environment. The source object mass is $1.0$ kg, while evaluation is performed on two target settings described in the evaluation protocol. The goal position is fixed at the center of the table, while the object initial position is randomized in the $xy$ plane. The training scripts use the dense task reward and an episode horizon of 500 steps.
+The second part uses the \texttt{panda-gym} environment. The source object mass is $1.0$ kg, while evaluation is performed on two target settings that will be described in the evaluation protocol. The goal position is fixed at the center of the table, while the object initial position is randomized in the $xy$ plane. The training scripts use the dense task reward and an episode horizon of 500 steps.
 
 \paragraph{Algorithms.}
-For Part 2 we rely on the Stable-Baselines3 implementations of two state-of-the-art actor-critic algorithms. PPO~\cite{schulman2017ppo} is an \textbf{on-policy} method that collects rollouts under the current policy and updates it by maximizing a clipped surrogate objective,
+The second part relies on the Stable-Baselines3 implementations of two state-of-the-art actor-critic algorithms. PPO~\cite{schulman2017ppo} is an \textbf{on-policy} method that collects rollouts under the current policy and updates it by maximizing a clipped surrogate objective,
 \begin{equation}
 \mathcal{L}^{\mathrm{CLIP}}(\theta) = \mathbb{E}_t\!\left[\min\!\big(\rho_t A_t,\ \mathrm{clip}(\rho_t, 1-\epsilon, 1+\epsilon)\, A_t\big)\right],
 \end{equation}
