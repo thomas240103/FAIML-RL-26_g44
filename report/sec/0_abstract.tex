@@ -1,7 +1,0 @@
-\begin{abstract}
-This report studies reinforcement learning for continuous
- control and sim-to-real transfer in the simplified sim-to-sim setting proposed by the project. First, we implemented REINFORCE, REINFORCE with a constant baseline, and an actor-critic policy-gradient variant from scratch on \texttt{Hopper-v4}. Then, we moved to the \texttt{PandaPush-v3} manipulation task and trained Stable-Baselines3 PPO and SAC agents under source and target dynamics, where the target object is heavier than the source object. The final implementation includes an evaluation for fixed and randomized object mass and friction, a reward-shaping wrapper, Uniform Domain Randomization (UDR) over mass and friction, and an Automatic Domain Randomization (ADR) wrapper. 
- The main results obtained for the PandaPush-v3 task show that a well tuned SAC policy can transfer quite well under low sim-to-real changes. 
- However, when the sim-to-real gap is marked (hard evaluation setting) vanilla SAC fails and Domain Randomization (DR) are needed to close the gap.
-
-\end{abstract}
