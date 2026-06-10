@@ -58,8 +58,6 @@ For exhaustive documentation and task-specific commands, refer to the following 
 
 - 📖 **[Part 1 Instructions & Commands](part1/README.md)**: Details on training REINFORCE and Actor-Critic models on the Hopper environment.
 - 📖 **[Part 2 Instructions & Commands](part2/README.md)**: Details on training PPO/SAC models on the Panda Push task and using Domain Randomization.
-- 📝 **[Project TODOs & Experiment Plan](todo.md)**: Comprehensive checklist of the required experiments, recommended step budgets, and evaluation settings for the report.
-- 📄 **[Report Structure Guidelines](report_info.md)**: Detailed breakdown of the expected 5-page report, including the mandatory tables and analytical sections.
 
 ## Project Structure
 
@@ -67,8 +65,6 @@ For exhaustive documentation and task-specific commands, refer to the following 
 FAIML-RL-26/
 ├── README.md               <-- Main entry point (this file)
 ├── requirements.txt        <-- Python dependencies
-├── todo.md                 <-- Comprehensive experiment plan and tasks
-├── report_info.md          <-- Guidelines for the final report
 ├── models/                 <-- Saved trained models
 ├── ppo_logs/ & sac_logs/ & tb_logs/ <-- TensorBoard logs
 │
