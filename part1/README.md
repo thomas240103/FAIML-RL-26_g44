@@ -1,26 +1,34 @@
-# Part 1: Hopper Environment
+# Part 1: Hopper With From-Scratch Policy Gradients
 
-This part focuses on implementing Reinforcement Learning algorithms from scratch and testing them on the continuous control MuJoCo `Hopper-v4` environment.
+Part 1 implements policy-gradient algorithms in PyTorch and trains them on the continuous-control MuJoCo `Hopper-v4` environment from Gymnasium.
 
-## Code Overview
+Implemented algorithms:
 
-- **`agent.py`**: Contains the PyTorch neural network architectures for the `Policy` (Actor and Critic networks) and the `Agent` class logic. It includes the `update_policy` method where the core mathematical updates for REINFORCE (with/without baseline) and Actor-Critic algorithms are implemented.
-- **`train.py`**: The main script to train the algorithms. It sets up the environment, initializes the agent, runs the training loop, periodically evaluates the policy, and saves the learning curve plots in the `plots/` folder.
-- **`test_random_policy.py`**: A helper script to interact with the environment using a random policy, useful for inspecting state/action spaces and the simulator's rendering.
-- **`run_part1_experiments.py`**: An automated script to run multiple experiments sequentially.
-- **`plot_comparison.py`**: Utility to compare learning curves across different seeds and models.
+- REINFORCE without a baseline.
+- REINFORCE with a constant scalar baseline.
+- One-step Actor-Critic with a learned state-value critic.
 
----
+Run all commands from the repository root unless noted otherwise.
 
-## Instructions
+## Files
 
-This document lists the commands for the Part 1 Hopper experiments requested in `FAIML_RL_2026.pdf`.
-
-Run every command from the repository root.
+```text
+part1/
+├── agent.py                         # Policy, critic, return computation, update rules
+├── train.py                         # Main Hopper training and evaluation loop
+├── test_random_policy.py            # Environment inspection and rendering helper
+├── utils/
+│   ├── run_part1_experiments.py     # Multi-seed experiment launcher
+│   └── plot_comparison.py           # Mean/std comparison plots from saved .npz results
+├── results/                         # Saved train/eval metrics
+├── plots/                           # Learning curves and comparison figures
+├── checkpoints/                     # Existing checkpoint artifacts
+└── colab_template/                  # Colab starter notebook
+```
 
 ## Environment
 
-Create and activate a Python environment, then install the project dependencies:
+Install the project dependencies from the repository root:
 
 ```bash
 python -m venv .venv
@@ -29,28 +37,24 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-If you already use Conda:
+For Conda:
 
 ```bash
-conda activate venv
+conda activate <env-name>
 python -m pip install -r requirements.txt
 ```
 
-Create the output directory used by `part1/train.py`:
+The training script creates `part1/plots/` and `part1/results/` automatically.
 
-```bash
-mkdir -p part1/plots
-```
+## Task 1: Inspect Hopper
 
-## Task 1 - Hopper Environment
-
-Run the random policy script to inspect the environment visually and print the state and action spaces:
+Render a random policy and print the observation/action spaces:
 
 ```bash
 python part1/test_random_policy.py
 ```
 
-For a non-rendering command that prints the state space, action space, MuJoCo body names, body masses, robot DoFs, per-body DoFs, and number of actuators:
+Use this non-rendering snippet to inspect MuJoCo model details that are useful for the report:
 
 ```bash
 python - <<'PY'
@@ -59,16 +63,15 @@ import gymnasium as gym
 env = gym.make("Hopper-v4", render_mode="rgb_array")
 env.reset(seed=0)
 model = env.unwrapped.model
-body_names = getattr(model, "body_names", None)
-if body_names is None:
-    try:
-        body_names = env.unwrapped.model_names.body_names
-    except AttributeError:
-        import mujoco
-        body_names = [
-            mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i)
-            for i in range(model.nbody)
-        ]
+
+try:
+    body_names = env.unwrapped.model_names.body_names
+except AttributeError:
+    import mujoco
+    body_names = [
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i)
+        for i in range(model.nbody)
+    ]
 
 print("State space:", env.observation_space)
 print("Action space:", env.action_space)
@@ -82,9 +85,9 @@ env.close()
 PY
 ```
 
-Use these outputs to answer the Task 1 guiding questions about whether the state and action spaces are discrete or continuous, and what the Hopper link masses are.
+`Hopper-v4` uses continuous observations and continuous actions. The policy therefore outputs a Gaussian distribution over the action vector, and sampled actions are clipped to the environment action bounds before stepping the simulator.
 
-## Task 2 - REINFORCE
+## Training Commands
 
 ### REINFORCE Without Baseline
 
@@ -101,7 +104,7 @@ time python part1/train.py \
 
 ### REINFORCE With Constant Baseline
 
-The assignment asks to compare REINFORCE without baseline against REINFORCE with a constant baseline. Start with the baseline value below, then repeat with other values to justify the chosen baseline in the report.
+The `--baseline` value is subtracted from discounted returns before computing the policy-gradient loss.
 
 ```bash
 time python part1/train.py \
@@ -131,7 +134,7 @@ for baseline in 0 10 20 50 100; do
 done
 ```
 
-## Task 3 - Actor-Critic
+### Actor-Critic
 
 ```bash
 time python part1/train.py \
@@ -144,73 +147,99 @@ time python part1/train.py \
   --no-show
 ```
 
-Compare this run against both REINFORCE variants in terms of reward, time consumption, learning stability, and convergence speed.
+Compare the three configurations in terms of reward, wall-clock time, training stability, and convergence speed.
 
-## Multi-Seed Runs
+## Multi-Seed Experiments
 
-For more reliable plots and report numbers, repeat the three main training configurations with multiple seeds:
+Run the standard experiment set over the default seeds `0 42 99`:
 
 ```bash
-for seed in 0 1 2; do
-  time python part1/train.py \
-    --alg reinforce \
-    --episodes 3000 \
-    --seed "$seed" \
-    --eval-every 100 \
-    --eval-episodes 5 \
-    --out "reinforce_no_baseline_seed_${seed}" \
-    --no-show
-
-  time python part1/train.py \
-    --alg reinforce \
-    --baseline 20 \
-    --episodes 3000 \
-    --seed "$seed" \
-    --eval-every 100 \
-    --eval-episodes 5 \
-    --out "reinforce_baseline_20_seed_${seed}" \
-    --no-show
-
-  time python part1/train.py \
-    --alg actor-critic \
-    --episodes 3000 \
-    --seed "$seed" \
-    --eval-every 100 \
-    --eval-episodes 5 \
-    --out "actor_critic_seed_${seed}" \
-    --no-show
-done
+python part1/utils/run_part1_experiments.py --episodes 5000 --plot
 ```
 
-## Output Files
+Specify a custom seed set:
 
-Each training command saves a learning curve in:
+```bash
+python part1/utils/run_part1_experiments.py \
+  --seeds 0 1 2 \
+  --episodes 3000 \
+  --eval-every 100 \
+  --eval-episodes 5 \
+  --print-every 50 \
+  --plot
+```
+
+Generate comparison plots from existing results only:
+
+```bash
+python part1/utils/plot_comparison.py --seeds 0 42 99
+```
+
+The comparison utility expects these result files:
 
 ```text
+part1/results/reinforce_no_baseline_seed_<seed>.npz
+part1/results/reinforce_baseline_20_seed_<seed>.npz
+part1/results/actor_critic_seed_<seed>.npz
+```
+
+## Outputs
+
+Each `part1/train.py` run saves:
+
+```text
+part1/results/<out>.npz
 part1/plots/<out>_learning_curve.png
 ```
 
-Examples:
+The `.npz` file contains:
+
+- `train_returns`: cumulative reward for every training episode.
+- `eval_episodes`: episode indices where evaluation was run.
+- `eval_returns`: mean deterministic evaluation return.
+- `algorithm`, `baseline`, `seed`: run metadata.
+
+Comparison plotting writes:
 
 ```text
-part1/plots/reinforce_no_baseline_seed_0_learning_curve.png
-part1/plots/reinforce_baseline_20_seed_0_learning_curve.png
-part1/plots/actor_critic_seed_0_learning_curve.png
+part1/plots/comparison_train_mean_std.png
+part1/plots/comparison_eval_mean_std.png
 ```
 
-The `time` prefix prints wall-clock runtime, which is useful for the report questions about time consumption.
+## Implementation Notes
 
-## Useful CLI Arguments
+`agent.py` defines a shared `Policy` module with:
+
+- an actor MLP that outputs the mean of a Normal action distribution;
+- a learned action standard deviation parameter transformed with `softplus`;
+- a critic MLP that outputs one scalar state-value estimate.
+
+For REINFORCE, `discount_rewards` computes full-episode discounted returns with `gamma = 0.99`, and the loss is:
+
+```text
+loss = -sum((G_t - baseline) * log pi(a_t | s_t))
+```
+
+For Actor-Critic, the update computes a one-step bootstrapped target:
+
+```text
+target_t = r_t + gamma * V(s_{t+1}) * (1 - done_t)
+advantage_t = target_t - V(s_t)
+```
+
+The actor minimizes `-log pi(a_t | s_t) * advantage_t`; the critic minimizes MSE against the bootstrapped target. Advantages are normalized inside each episode before the actor loss.
+
+## `train.py` CLI
 
 | Argument | Default | Description |
 | --- | --- | --- |
-| `--alg` | `reinforce` | Training algorithm. Choices: `reinforce`, `actor-critic`. |
-| `--baseline` | `0.0` | Constant baseline subtracted from REINFORCE discounted returns. |
-| `--episodes` | `3000` | Number of training episodes. |
-| `--seed` | `0` | Random seed. |
-| `--print-every` | `10` | Print training statistics every N episodes. |
-| `--eval-every` | `100` | Run evaluation every N episodes. |
-| `--eval-episodes` | `5` | Number of episodes used for each evaluation. |
+| `--alg` | `reinforce` | Algorithm: `reinforce` or `actor-critic`. |
+| `--baseline` | `0.0` | Constant baseline for REINFORCE. |
+| `--episodes` | `3000` | Training episodes. |
+| `--seed` | `0` | Base random seed. Episode `i` resets with `seed + i`. |
+| `--print-every` | `10` | Print recent training return every N episodes. |
+| `--eval-every` | `100` | Run deterministic evaluation every N episodes. |
+| `--eval-episodes` | `5` | Evaluation episodes per evaluation point. |
 | `--render` | off | Render training episodes in a human window. |
-| `--out` | auto-generated | Output prefix for the saved learning curve. |
-| `--no-show` | off | Save the plot without opening an interactive plot window. |
+| `--out` | auto | Output prefix for `.npz` and `.png` files. |
+| `--no-show` | off | Save plots without opening an interactive window. |

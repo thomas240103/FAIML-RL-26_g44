@@ -59,7 +59,7 @@ def main():
             subprocess.run(command, check=True)
 
     if args.plot:
-        subprocess.run([sys.executable, "part1/plot_comparison.py"], check=True)
+        subprocess.run([sys.executable, "part1/utils/plot_comparison.py"], check=True)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{graphicx}
+
 % Import additional packages in the preamble file, before hyperref
 \input{preamble}
 
@@ -31,8 +32,8 @@
 \title{Reinforcement Learning for Sim-to-Sim Robot Transfer}
 
 %%%%%%%%% AUTHORS - PLEASE UPDATE
-\author{Leonardo Passafiume (358616)
-\and Lucio Baiocchi
+\author{Leonardo Passafiume
+\and Lucio Baiocchi 
 \and Maurizio Lanzoni Raiteri
 \and Thomas Kelly}
 % For a paper whose authors are all at the same institution,
@@ -43,10 +44,14 @@
 \raggedbottom
 \begin{document}
 \maketitle
+\begingroup
+\renewcommand{\thefootnote}{}
+\footnotetext{Code repository: \href{https://github.com/thomas240103/FAIML-RL-26_g44}{GitHub repository}.}
+\endgroup
 \input{sec/0_abstract}    
 \input{sec/1_intro}
 \input{sec/2_methodology}
-\input{sec/3.1_results}
+\input{sec/3_results}
 \input{sec/4_discussion}
 \input{sec/5_conclusion}
 \newpage
